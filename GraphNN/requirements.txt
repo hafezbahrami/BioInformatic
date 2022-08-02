@@ -1,0 +1,17 @@
+# python -m ipykernel install --user --name=<my_env_name>    to include the virtual env for jupyter
+#ipykernel
+#ipython
+matplotlib
+numpy
+pandas
+
+scipy
+jupyter
+pillow
+scikit-learn
+#------------------- 
+networkx
+#-------------------
+torch-scatter
+torch_sparse
+torch_geometric
