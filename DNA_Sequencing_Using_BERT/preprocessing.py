@@ -252,28 +252,30 @@ class PreProcessData():
             globals()[f'train_{self.k_mer_val}_labels_{w}'] = trains
             globals()[f'test_{self.k_mer_val}_labels_{w}'] = tests
 
-# -----------------------------------------------------------------------------------
-# Test1
-# testing making k_mer's representations for the nucleotide sequence
-fake_genome='ATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGACC'
-fake_gt_gen_seq_coor = [(3, 8), (11, 15), (14, 19)]
-preProcessObj1 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_gen_seq_coor,
-                               train_fraction=1.0, windows=[75], k_mer_val=6,
-                                genome_name="fake_ecoli")
-k_mer_ed_represntation = preProcessObj1._make_kmers(data=fake_genome)
 
-# Test2: Labeling task: Those nodes/letters in below ecoli_genome gets label as 1 for indices between (3, 8), (11, 15), (14, 19)
-fake_genome = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-fake_gt_seq_data_ordered = [(3, 8), (11, 15), (14, 19)] # ordered based on start index --> 3 < 11 < 14
-preProcessObj2 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
-                               train_fraction=1.0, windows=[75], k_mer_val=6,
-                                genome_name="fake_ecoli")
-fake_labels = preProcessObj2._label_genome()
+if __name__ == "__main__":
+    # -----------------------------------------------------------------------------------
+    # Test1
+    # testing making k_mer's representations for the nucleotide sequence
+    fake_genome='ATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGACC'
+    fake_gt_gen_seq_coor = [(3, 8), (11, 15), (14, 19)]
+    preProcessObj1 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_gen_seq_coor,
+                                train_fraction=1.0, windows=[75], k_mer_val=6,
+                                    genome_name="fake_ecoli")
+    k_mer_ed_represntation = preProcessObj1._make_kmers(data=fake_genome)
 
-# Test 3
-ecoli_genome, gt_gen_seq_coor, _, _ = _get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
-preProcessObj3 = PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
-                               train_fraction=0.7, windows=[75], k_mer_val=6,
-                                genome_name="ecoli")
-preProcessObj3.make_datasets()
-zz=1
+    # Test2: Labeling task: Those nodes/letters in below ecoli_genome gets label as 1 for indices between (3, 8), (11, 15), (14, 19)
+    fake_genome = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    fake_gt_seq_data_ordered = [(3, 8), (11, 15), (14, 19)] # ordered based on start index --> 3 < 11 < 14
+    preProcessObj2 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                train_fraction=1.0, windows=[75], k_mer_val=6,
+                                    genome_name="fake_ecoli")
+    fake_labels = preProcessObj2._label_genome()
+
+    # Test 3
+    ecoli_genome, gt_gen_seq_coor, _, _ = _get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
+    preProcessObj3 = PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
+                                train_fraction=0.7, windows=[75], k_mer_val=6,
+                                    genome_name="ecoli")
+    preProcessObj3.make_datasets()
+    zz=1
