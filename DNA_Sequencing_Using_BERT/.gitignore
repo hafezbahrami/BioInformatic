@@ -6,6 +6,9 @@ __pycache__
 DNABERT/
 Viljamaa_Venla_thesis_2022.pdf
 
+# data_folders
+*ecoli_data
+
 # Environments
 env/
 venv/

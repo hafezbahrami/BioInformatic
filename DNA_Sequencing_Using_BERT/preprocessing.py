@@ -8,10 +8,15 @@ import pandas as pd
 import sklearn.metrics as metrics
 from PIL import Image
 import os
+from os import path
+
+debug_flag = True
 
 kmer_val = 3
 windows_vals = [75]
 method_val = 1
+
+file_dir = path.dirname(path.abspath(__file__))
 
 
 def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: str = "./Gene_sequence.txt"):
@@ -22,6 +27,10 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
     genome_seq_dir: The genome sequence.
             Here we want to focus only on a specific genome for a bacteria (Ecoli K-12
     """
+    if debug_flag:
+        gt_dir = path.join(file_dir, gt_dir).replace("./", "")
+        genome_seq_dir = path.join(file_dir, genome_seq_dir).replace("./", "")
+
     gt_genome_seq_data = []
     with open(gt_dir, 'r') as f:
         gt_lines = f.readlines()
@@ -31,7 +40,7 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
                 gt_genome_seq_data.append(tab_separated_lst)
     print(f'Total # of ground-truth genes (sequences): {len(gt_genome_seq_data)}')  # 4686
 
-    # 2. Put in order
+    # 2. Put in order. making sure the smaller starting index gets priority
     def order(elem):
         r = elem[0]
         if len(r) > 0:
@@ -40,8 +49,10 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
             return 0
 
     # We are only interested in genome sequences
-    # Genes with no␣coordinates are left out. d[2] in every list in gt_genome_seq_data is the starting idx for gene
-    # we only want to keep starting_idx, end_idx, and if it is "forwarding" "backward-ing"
+    # Genes with no␣coordinates are left out. 
+    # coordinate1: d[2] in every list in gt_genome_seq_data is the starting idx for gene
+    # coordinate1: d[3] in every list in gt_genome_seq_data is the ending idx for gene
+    # we only want to keep starting_idx, end_idx, and if it is "forwarding" "backward-ing". As an example: ['337', '2799', 'forward', '-']
     gt_genome_seq_data_ordered = [d[2:6] for d in gt_genome_seq_data if len(d[2]) > 0]
     gt_genome_seq_data_ordered.sort(key=order)
     print(f'Genes with no coordinates removed, total amount now: {len(gt_genome_seq_data_ordered)}')
@@ -106,9 +117,9 @@ class PreProcessData():
         # Find the test/train border index
         idx: int = int(len(self.labels) * self.train_fraction)
         self.genome_train: str = self.genome[:idx]
-        self.genome_label_train: List[List[str]] = self.labels[:idx]
+        self.genome_label_train: List[int] = self.labels[:idx]
         self.genome_test: str = self.genome[idx:]
-        self.genome_label_test: List[List[str]] = self.labels[idx:]
+        self.genome_label_test: List[int] = self.labels[idx:]
 
     def _make_kmers(self, data):
         """
@@ -199,8 +210,8 @@ class PreProcessData():
         """
         train_data: List[str] = self._make_train_sequences(seq_len)
         test_data: List[str] = self._make_test_sequences(seq_len)
-        print(f'# of train seq: {len(train_data)}, each contains {seq_len} of k_mer length of {self.k_mer_val}')
-        print(f'# of test seq: {len(test_data)}, , each contains {seq_len} of k_mer length of {self.k_mer_val}')
+        print(f'# of train seq: {len(train_data)}, each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
+        print(f'# of test seq: {len(test_data)}, , each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
         header = ['sequence label\n']
         if self.shuffle:
             np.random.seed(123)
@@ -208,10 +219,13 @@ class PreProcessData():
         train = header + train_data
         test = header + test_data
 
-        if not os.path.exists('./' + path):
-            os.makedirs('./' + path)
-        train_dir = path + 'train.tsv'
-        test_dir = path + 'dev.tsv'
+        
+        current_path = "./" if not debug_flag else file_dir + "/"
+        if not os.path.exists(current_path + path):
+            os.makedirs(current_path + path)
+        prefix_str = "" if not debug_flag else current_path
+        train_dir = prefix_str+ path + 'train.tsv' 
+        test_dir = prefix_str + path + 'dev.tsv'
 
         with open(train_dir, 'w') as f_output:
             for line in train:
@@ -225,7 +239,7 @@ class PreProcessData():
 
     def make_datasets(self):
         """
-        Function for making multiple datasets
+        Function for making test and train datasets
         """
         self._get_train_test_genome_and_label()
         for w in self.windows:
