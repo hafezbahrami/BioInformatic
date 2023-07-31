@@ -8,3 +8,26 @@ Pillow
 torch
 
 gdown
+
+# --- tokenizers and transformers
+tokenizers
+transformers
+
+
+# --- At this point, DNABERT must be git-clined into local and the folder should be available
+# --- Then after making some changes in DNABERT by calling "minor_version_changes_in_DNABERT()" availabl in helper.py we can install an
+# --- editable version of the DNA BERT package
+-e ./DNA_Sequencing_Using_BERT/DNABERT/.
+
+# --- after installing DNABERT locally, we should install the following packages in our local env.
+tensorboardX
+tensorboard
+scikit-learn >= 0.22.2
+seqeval
+pyahocorasick
+scipy
+statsmodels
+biopython
+pandas
+pybedtools
+sentencepiece == 0.1.99

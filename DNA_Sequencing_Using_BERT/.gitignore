@@ -4,10 +4,17 @@
 __pycache__
 6-new-12w-0.zip
 DNABERT/
+
 Viljamaa_Venla_thesis_2022.pdf
+
+# files created after running main.py on various modes
+*output
+*pretrained_DNA
+*prediction
 
 # data_folders
 *ecoli_data
+*.zip
 
 # Environments
 env/
