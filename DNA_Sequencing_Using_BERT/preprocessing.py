@@ -38,7 +38,7 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
             if line[0] != '#': # ignore the commented-out lines
                 tab_separated_lst = line.split("\t")
                 gt_genome_seq_data.append(tab_separated_lst)
-    print(f'Total # of ground-truth genes (sequences): {len(gt_genome_seq_data)}')  # 4686
+    print(f'Total # of ground-truth genes (sequences): {len(gt_genome_seq_data):,d}')  # 4686
 
     # 2. Put in order. making sure the smaller starting index gets priority
     def order(elem):
@@ -55,12 +55,12 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
     # we only want to keep starting_idx, end_idx, and if it is "forwarding" "backward-ing". As an example: ['337', '2799', 'forward', '-']
     gt_genome_seq_data_ordered = [d[2:6] for d in gt_genome_seq_data if len(d[2]) > 0]
     gt_genome_seq_data_ordered.sort(key=order)
-    print(f'Genes with no coordinates removed, total amount now: {len(gt_genome_seq_data_ordered)}')
+    print(f'Genes with no coordinates removed, total amount now: {len(gt_genome_seq_data_ordered):,d}')
     # Separate sets for forward and reverse genes
     gt_genome_seq_data_forward = [d for d in gt_genome_seq_data_ordered if d[2] == "forward"]
     gt_genome_seq_data_reverse = [d for d in gt_genome_seq_data_ordered if d[2] == "reverse"]
-    print(f'Forward genes: {len(gt_genome_seq_data_forward)}')
-    print(f'Reverse genes: {len(gt_genome_seq_data_reverse)}')
+    print(f'Forward genes: {len(gt_genome_seq_data_forward):,d}')
+    print(f'Reverse genes: {len(gt_genome_seq_data_reverse):,d}')
 
     # ----------------------------------------------------------------------------------
     # Read the genome sequence to one string of ~4.6 million length
@@ -72,13 +72,13 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
         line_length = len(ecoli_lines[50])
         ecoli_lines = [l[:line_length - 1] for l in ecoli_lines]
 
-    print(f'{len(ecoli_lines)} lines')
+    print(f'{len(ecoli_lines):,d} lines')
 
     ecoli = ''
     for line in ecoli_lines:
         ecoli += line
 
-    print(f'{len(ecoli)} nucleotides in ecoli genome')
+    print(f'{len(ecoli):,d} nucleotides in ecoli genome')
 
     return ecoli, gt_genome_seq_data_ordered, gt_genome_seq_data_forward, gt_genome_seq_data_reverse
 
@@ -210,8 +210,8 @@ class PreProcessData():
         """
         train_data: List[str] = self._make_train_sequences(seq_len)
         test_data: List[str] = self._make_test_sequences(seq_len)
-        print(f'# of train seq: {len(train_data)}, each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
-        print(f'# of test seq: {len(test_data)}, , each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
+        print(f'# of train seq: {len(train_data):,d}: each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
+        print(f'# of test seq: {len(test_data):,d}: each element in this list contains {seq_len} of k_mer length of {self.k_mer_val}')
         header = ['sequence label\n']
         if self.shuffle:
             np.random.seed(123)
@@ -241,6 +241,8 @@ class PreProcessData():
         """
         Function for making test and train datasets
         """
+        train_labels_dict = {}
+        test_labels_dict = {}
         self._get_train_test_genome_and_label()
         for w in self.windows:
             print(f'window={w}, k={self.k_mer_val}')
@@ -251,6 +253,10 @@ class PreProcessData():
 
             globals()[f'train_{self.k_mer_val}_labels_{w}'] = trains
             globals()[f'test_{self.k_mer_val}_labels_{w}'] = tests
+            train_labels_dict[f'train_{self.k_mer_val}_labels_{w}'] = trains
+            test_labels_dict[f'train_{self.k_mer_val}_labels_{w}'] = tests
+        return train_labels_dict, test_labels_dict
+
 
 
 if __name__ == "__main__":
@@ -277,5 +283,5 @@ if __name__ == "__main__":
     preProcessObj3 = PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                 train_fraction=0.7, windows=[75], k_mer_val=6,
                                     genome_name="ecoli")
-    preProcessObj3.make_datasets()
+    train_labels_dict, test_labels_dict = preProcessObj3.make_datasets()
     zz=1

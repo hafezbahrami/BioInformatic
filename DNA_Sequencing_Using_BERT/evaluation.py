@@ -8,24 +8,25 @@ from PIL import Image
 import os
 import shutil
 
-# Change the predictions from floats in range [0,1] into labels 0 or 1
-def make_predicted_labels(data, seq_len, th=0.5):
+def predict_label_from_prob(data, seq_len, threshold=0.5):
+  """Change the predictions from floats in range [0,1] into labels 0 or 1"""
   labels = []
   probabs = []
-  for d in data:
-    if d>th:
+  for p in data:
+    if p > threshold:
       for i in range(seq_len):
         labels.append(1)
-        probabs.append(d)
+        probabs.append(p)
     else:
       for i in range(seq_len):
         labels.append(0)
-        probabs.append(d)
+        probabs.append(p)
   return labels, probabs
 
 
-# Visualize the distribution of predicted values.
+
 def plot_distribution(data, th):
+    """Visualize the distribution of predicted values."""
     vals = [int(v * 1000) for v in data]
     counts = Counter(vals)
     keys = counts.keys()
@@ -51,8 +52,9 @@ def plot_distribution(data, th):
     plt.savefig("./figures/plots/"+"distribution.png")
 
 
-# Visualize the TP, TN, FP and FN counts
+
 def plot_confusion(tp,tn,fp,fn):
+    """Visualize the TP, TN, FP and FN counts"""
     results = np.array([[tn,fp], [fn,tp]])
     df_cm = pd.DataFrame(results)
     strings = np.asarray([['TN', 'FP'], ['FN', 'TP']])
@@ -70,8 +72,9 @@ def plot_confusion(tp,tn,fp,fn):
     plt.savefig("./figures/plots/" + "confusion.png")
 
 
-# Show Matthews correlation coefficient (MCC curve
+
 def plot_roc(gt_labels, probas):
+    """Show Matthews correlation coefficient (MCC curve"""
     fpr, tpr, threshold = metrics.roc_curve(gt_labels, probas)
     fig=plt.figure(figsize = (6,6))
     plt.plot(fpr, tpr)
@@ -86,8 +89,9 @@ def plot_roc(gt_labels, probas):
     plt.savefig("./figures/plots/" + "roc.png")
 
 
-# Save loss values from the logs and read them from the file
+
 def get_loss(path):
+  """Save loss values from the logs and read them from the file"""
   data = []
   avg = 0
   with open(path, 'r') as f:
@@ -108,8 +112,9 @@ def get_loss(path):
   return steps, losses, avg
 
 
-# Visualize the model performation bu showing the loss values during the training
+
 def plot_loss(path):
+    """Visualize the model performation bu showing the loss values during the training"""
     steps, losses, avg = get_loss(path)
     fig=plt.figure(figsize=(6, 6))
     plt.plot(steps, losses, label='training loss')
@@ -127,8 +132,8 @@ def plot_loss(path):
 
 
 
-# Combine and save the four images into one.
 def make_image(path):
+  """Combine and save the four images into one."""
   images = [Image.open(x) for x in ['figures/plots/distribution.png',
   'figures/plots/confusion.png',
   'figures/plots/roc.png',
@@ -145,29 +150,29 @@ def make_image(path):
     new_im.save(path)
 
 
-# Calculate the evaluation metrics and show the plots
-def evaluate(datapath, losspath, seq_len, test_labels, img_name, th=0.5):
+def evaluate(datapath, losspath, seq_len, gt_labels, img_name, threshold=0.5):
+    """Calculate the evaluation metrics and show the plots"""
     data = np.load(datapath)
     print(f'Predicted values are between {np.min(data):.4f} and {np.max(data):.4f}.')
-    pr_labels, probabs = make_predicted_labels(data, seq_len, th)
-    print(f'Count of predicted labels: {len(pr_labels)}')
-    print(f'Count of gt labels: {len(test_labels)}')
-    # Chacking that the label lengts match
-    if len(test_labels) - len(pr_labels) > seq_len:
+    predicted_labels, probabs = predict_label_from_prob(data, seq_len, threshold)
+    print(f'Count of predicted labels: {len(predicted_labels):,d}')
+    print(f'Count of gt labels: {len(gt_labels):,d}')
+    # Checking that the label lengths match
+    if len(gt_labels) - len(predicted_labels) > seq_len:
         print('Wrong test labels!')
 
     # TP, TN, FP and FN:
     mismatches, tp, tn, fp, fn = 0, 0, 0, 0, 0
-    for i in range(len(pr_labels)):
-        if pr_labels[i] != test_labels[i]:
+    for i in range(len(predicted_labels)):
+        if predicted_labels[i] != gt_labels[i]:
             mismatches += 1
-        if pr_labels[i] == 1 and test_labels[i] == 1:
+        if predicted_labels[i] == 1 and gt_labels[i] == 1:
             tp += 1
-        elif pr_labels[i] == 0 and test_labels[i] == 0:
+        elif predicted_labels[i] == 0 and gt_labels[i] == 0:
             tn += 1
-        elif pr_labels[i] == 1 and test_labels[i] == 0:
+        elif predicted_labels[i] == 1 and gt_labels[i] == 0:
             fp += 1
-        elif pr_labels[i] == 0 and test_labels[i] == 1:
+        elif predicted_labels[i] == 0 and gt_labels[i] == 1:
             fn += 1
 
     # Precision and recall:
@@ -185,25 +190,26 @@ def evaluate(datapath, losspath, seq_len, test_labels, img_name, th=0.5):
         mcc_denom = 1
 
     mcc = (tp * tn - fp * fn) / mcc_denom ** .5
-    print(f'Accuracy: {1 - mismatches / len(test_labels):.4f}')
+    print(f'Accuracy: {1 - mismatches / len(gt_labels):.4f}')
     print(f'MCC: {mcc:.4f}')
     print(f'F1-score: {2 * prec * rec / (prec + rec):.4f}')
     print(f'Precision: {prec:.4f}')
     print(f'Recall: {rec:.4f}')
-    plot_distribution(data, th)
+    plot_distribution(data, threshold)
     plot_confusion(tp, tn, fp, fn)
-    plot_roc(test_labels[:len(probabs)], probabs)
+    plot_roc(gt_labels[:len(probabs)], probabs)
     plot_loss(losspath)
     make_image('figures/plots/ecoli/' + img_name)
 
 
-file_loc = "../../prediction/6/pred_results.npy"
-file_loc = "./pred_results.npy"
+if __name__ == "__main__":
+    file_loc = "../../prediction/6/pred_results.npy"
+    file_loc = "./pred_results.npy"
 
-genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(1392496)]
-test_labels = np.array(genome_label_test)
+    genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(1392496)]
+    gt_labels = np.array(genome_label_test)
 
-xx= np.load(file_loc)
+    xx= np.load(file_loc)
 
-evaluate(datapath=file_loc, losspath=file_loc, seq_len=75,
-         test_labels=test_labels, img_name="my_image_name", th=0.5)
+    evaluate(datapath=file_loc, losspath=file_loc, seq_len=75,
+            gt_labels=gt_labels, img_name="my_image_name", th=0.5)
