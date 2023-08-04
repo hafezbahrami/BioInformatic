@@ -12,6 +12,7 @@ Viljamaa_Venla_thesis_2022.pdf
 *pretrained_DNA
 *prediction
 *figures
+pred_results.npy
 
 # data_folders
 *ecoli_data
