@@ -42,8 +42,8 @@ gene: start=1600, end=2100, strand=backward
 ```
 
 ## Code Notes
-Codes notes are in Persian, and located in below location.
-["Code Notes"](./notes)
+["Code Notes"](./notes) are in Persian :).
+
 
 
 ## Downloading the pretrained DNABERT model

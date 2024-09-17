@@ -20,10 +20,10 @@ file_dir = path.dirname(path.abspath(__file__))
 def train():
     # (1) creating the datasets
     ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
-    preProcessObj3 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
+    preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                 train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
                                     genome_name="ecoli")
-    train_labels_dict, test_labels_dict = preProcessObj3.make_datasets()
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
 
     # (2) Load a pretrained-DNA-BERT model
     helper.load_pretrained_dnabert_model()
@@ -127,7 +127,7 @@ def train():
     if kmer_val != 6 or window_size != 75:
         raise Exception("Below code is temporariy and when kmer=6 and window_size=75")
     genome_label_test = []
-    for line in test_labels_dict["train_6_labels_75"]:
+    for line in k_mer_seq_test_X_and_Y_lab_dict["train_6_labels_75"]:
         for _ in range(window_size):
             genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method
     gt_labels_test = np.array(genome_label_test)

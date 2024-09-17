@@ -21,7 +21,7 @@ def load_pretrained_dnabert_model():
         # as of now the gdown only downloads in Colab, not in an script
         if not os.path.isfile(current_path + "6-new-12w-0.zip"):
             url = "https://drive.google.com/u/0/uc?id=1BJjqb5Dl2lNMg2warsFQ0-Xvn1xxfFXC&export=download&confirm=t&uuid=574dd7fc-207b-43c4-b502-ab6a52549838&at=ALgDtswq3dLLBv3bezvOuM8dlJG-:1679328206346"
-            gdown.download(url, quiet=False)
+            gdown.download(url, quiet=False, output=current_path+"6-new-12w-0.zip")
 
         with zipfile.ZipFile(current_path + "6-new-12w-0.zip", "r") as zip_ref:
             zip_ref.extractall(current_path + "pretrained_DNA/")
@@ -72,13 +72,13 @@ def setting_env_variables_for_DNABERT(kmer_val):
     os.environ['OUTPUT_PATH'] = current_path + f"output/{k}/"
     os.environ['PREDICTION_PATH'] = current_path + f"prediction/{k}/"
 
-    print("*** printing env variable set for DNABERT...")
-    print(os.environ.get('KMER'))
-    print(os.environ.get('TOKENIZER_NAME'))
-    print(os.environ.get('MODEL_PATH'))
-    print(os.environ.get('DATA_PATH'))
-    print(os.environ.get('OUTPUT_PATH'))
-    print(os.environ.get('PREDICTION_PATH'))
+    print("\n*** printing env variable set for DNABERT...")
+    print(f"k_mer length:                       {os.environ.get('KMER')}")
+    print(f"Tokenizer name:                     {os.environ.get('TOKENIZER_NAME')}")
+    print(f"Pre-trained DNA_BERT model path:    {os.environ.get('MODEL_PATH')}")
+    print(f"Data path:                          {os.environ.get('DATA_PATH')}")
+    print(f"Output path:                        {os.environ.get('OUTPUT_PATH')}")
+    print(f"Predictionpath:                     {os.environ.get('PREDICTION_PATH')} \n")
 
 
     output_dir = os.getenv("OUTPUT_PATH")

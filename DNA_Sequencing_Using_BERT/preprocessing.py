@@ -143,12 +143,12 @@ class PreProcessData():
     def _helper_limit_the_array_with_length(self, Y_lab_s, seq_len):
         """Kaming sure that in traning coding/non-coding section, no array is larger than the seq-len (or window len)"""
         def _helper_elim_short_array(arr, max_l):
-                extra_elem = len(arr) % max_l
-                arr=arr[: -extra_elem]
-                n_chunks = len(arr) // max_l                # Calculate how many equal sections of length 'l' can be created
-                chunks = np.array_split(arr, n_chunks)      # Split the array into equal chunks
-                final_arrs = [chunk for chunk in chunks if len(chunk) == max_l]  # Filter out chunks with fewer than 'l' elements
-                return final_arrs
+            extra_elem = len(arr) % max_l
+            if extra_elem > 0: arr=arr[: -extra_elem]
+            n_chunks = len(arr) // max_l                # Calculate how many equal sections of length 'l' can be created
+            chunks = np.array_split(arr, n_chunks)      # Split the array into equal chunks
+            final_arrs = [chunk for chunk in chunks if len(chunk) == max_l]  # Filter out chunks with fewer than 'l' elements
+            return final_arrs
 
         temp_arrs = []
         for Y_lab in Y_lab_s:
@@ -207,7 +207,7 @@ class PreProcessData():
                         zeros += 1
                     line = (f"{k_mer_seq}\t{label}\n")
                     if len(k_mer_seq) > 0: k_mer_seqs.append(line)              # only add to this to dataset, when there is k_mer
-        print(f'Zeros account of the total Y_lab_s in the train set: {zeros / len(k_mer_seqs)}')
+        print(f'Number of {zeros} Y_lab=0 out of total {len(k_mer_seqs)} train k_mer_seq: Nearly ~ {zeros / len(k_mer_seqs)}')
         return k_mer_seqs
 
     def _make_test_k_mer_sequences(self, seq_len) -> List[str]:
@@ -249,7 +249,8 @@ class PreProcessData():
                     zeros += 1
             line = (f"{k_mer_seq}\t{label}\n")
             k_mer_seqs.append(line)
-        print(f'Zeros account of the total labels in test set: {zeros / len(k_mer_seqs)}')
+        print(f'Number of {zeros} Y_lab=0 out of total {len(k_mer_seqs)} test k_mer_seq: Nearly ~ {zeros / len(k_mer_seqs)}')
+
         return k_mer_seqs
 
     def _write_test_and_dev_files(self, seq_len, path):
@@ -258,8 +259,8 @@ class PreProcessData():
         """
         k_mer_seq_train_data: List[str] = self._make_train_k_mer_sequences(seq_len=seq_len)
         k_mer_seq_test_data: List[str] = self._make_test_k_mer_sequences(seq_len=seq_len)
-        print(f'\n# of train k_mer seq: {len(k_mer_seq_train_data):,d} ----> each string-line contains k_mer s of length {self.k_mer_val}. Window length: {seq_len}')
-        print(f'# of test k_mer seq:  {len(k_mer_seq_test_data):,d} ----> each string-line contains k_mer s of length {self.k_mer_val}. Window length: {seq_len}')
+        print(f'\nNumber of train k_mer_seq: {len(k_mer_seq_train_data):,d} ----> each string-line contains k_mer s of length {self.k_mer_val}. Window length: {seq_len}')
+        print(f'Number of test k_mer_seq:  {len(k_mer_seq_test_data):,d} ----> each string-line contains k_mer s of length {self.k_mer_val}. Window length: {seq_len}')
         header = ['sequence label\n']
         if self.shuffle:
             np.random.seed(123)

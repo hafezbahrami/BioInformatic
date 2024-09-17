@@ -22,11 +22,14 @@ nltk="*"
 # Hugging Face Transformers
 transformers="*"
 datasets="*"
+tokenizers="*"
 
 
 [dev-packages]
 tqdm="*"
 torchvision="*"
+gdown="*"
+zipfile36="*"
 
 
 [requires]
