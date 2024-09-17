@@ -4,6 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+dnabert = {path = "./DNA_Sequencing_Using_BERT/DNABERT/", editable = true}
+# -------------------------------
 matplotlib = "*"
 seaborn="*"
 numpy = "*"
@@ -23,8 +25,7 @@ nltk="*"
 # transformers="==2.5.0"
 datasets = "==1.6.2"  # Huggingface datasets library
 tokenizers = "*"
-# -------------------------------
-dnabert = {path = "./DNA_Sequencing_Using_BERT/DNABERT", editable = true}
+
 
 [dev-packages]
 tqdm = "*"

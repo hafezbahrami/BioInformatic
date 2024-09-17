@@ -41,12 +41,15 @@ A backward gene, means the gene starts at position 1600, ends at position 2100, 
 gene: start=1600, end=2100, strand=backward
 ```
 
-## Code Notes
+## 3 Code Notes
 ["Code Notes"](./notes) are in Persian :).
 
 
 
-## Downloading the pretrained DNABERT model
+## 4 Setting the environment
+Since DNABERT is an old code suing old versions of Transformers, dataset, tokenizer, .., it can be challenging to  set the right environment to run the project. The following steps should be done:
+
+### 4-1 Downloading the pretrained DNABERT model
 The following code snippet in main.py tries to download a pretrained DNABERT and unzipp it. The unzipped files will be placed in a specific folder.
 If downloading from google-drive is problemaic, the code in colab file could be helpful.
 
@@ -66,7 +69,7 @@ if fine_tune_DANABERT_using_pretrained_model:
         zip_ref.extractall(current_path + "pretrained_DNA/")
 ```
 
-## Cloning DNABERT
+### 4-2 Cloning DNABERT
 cloning the DNABERT first:
 
 ```
@@ -89,4 +92,6 @@ pandas
 pybedtools
 sentencepiece==0.1.99
 ```
+
+If using a pipfile, then after locking the file, it is important to istall an editable version of DNABERT. 
 
