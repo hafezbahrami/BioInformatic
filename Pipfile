@@ -4,15 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-matplotlib="*"
+matplotlib = "*"
 seaborn="*"
-numpy="*"
-pandas="*"
+numpy = "*"
+pandas = "*"
 scipy="*"
 ipykernel = "*"
-scikit-learn="*"
+scikit-learn = "*"
 #-------------------
-torch="*"
+torch= "*" # Match this to your CUDA version, or adjust for CPU
 tensorboard="*"
 torchtext="*"
 torchdata = "*"
@@ -20,17 +20,24 @@ spacy = "*"
 nltk="*"
 # ----------------
 # Hugging Face Transformers
-transformers="*"
-datasets="*"
-tokenizers="*"
-
+transformers="==2.5.0"
+datasets = "==1.6.2"  # Huggingface datasets library
+tokenizers = "*"
+# -------------------------------
+dnabert = {path = "./DNA_Sequencing_Using_BERT/DNABERT", editable = true}
 
 [dev-packages]
-tqdm="*"
+tqdm = "*"
 torchvision="*"
 gdown="*"
 zipfile36="*"
-
+tensorboardX="*"
+seqeval = "*"  # For sequence evaluation metrics
+pyahocorasick="*"
+statsmodels="*"
+biopython="*"
+pybedtools="*"
+sentencepiece = "==0.1.96"  # SentencePiece for tokenizer support
 
 [requires]
 python_version = "3.10"

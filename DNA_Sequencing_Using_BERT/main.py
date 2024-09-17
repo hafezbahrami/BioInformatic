@@ -41,26 +41,26 @@ def train():
 
     fineTuneFileNameAndLocation = file_dir + "/DNABERT/examples/run_finetune.py"
     resultTrain = subprocess.check_output(["python", fineTuneFileNameAndLocation, 
+                                                        "--data_dir", DATA_PATH,                                           
                                                         "--model_type", "dna",
-                                                        "--tokenizer_name", TOKENIZER_NAME,
+                                                        "--n_process", str(8),  
                                                         "--model_name_or_path", MODEL_PATH,
                                                         "--task_name", "dnaprom",
-                                                        "--do_train", 
-                                                        "--data_dir", DATA_PATH,
-                                                        "--max_seq_length", str(window_size), 
-                                                        "--per_gpu_eval_batch_size", str(16),
-                                                        "--per_gpu_train_batch_size", str(16),
-                                                        "--learning_rate", str(1e-6),
-                                                        "--num_train_epochs", str(3.0),
                                                         "--output_dir", OUTPUT_PATH,
+                                                        "--tokenizer_name", TOKENIZER_NAME,
                                                         "--predict_dir", PREDICTION_PATH,
+                                                        "--max_seq_length", str(window_size), 
+                                                        "--do_train", 
+                                                        "--per_gpu_train_batch_size", str(16),
+                                                        "--per_gpu_eval_batch_size", str(16),
+                                                        "--learning_rate", str(1e-6),
+                                                        "--weight_decay", str(0.01),
+                                                        "--hidden_dropout_prob", str(0.1),
+                                                        "--num_train_epochs", str(3.0),
+                                                        "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(100),
                                                         "--save_steps", str(60000),
-                                                        "--warmup_percent", str(0.06),
-                                                        "--hidden_dropout_prob", str(0.1),
-                                                        "--overwrite_output",
-                                                        "--weight_decay", str(0.01),
-                                                        "--n_process", str(8)])
+                                                        "--overwrite_output",])
     print(resultTrain)
 
     # # (4) PREDICT: Running fin-tunning in prediction mode in DNABERT: run the main() function in the DNABERT package

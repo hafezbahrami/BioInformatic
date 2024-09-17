@@ -42,10 +42,10 @@ from transformers import (
     AlbertTokenizer,
     BertConfig,
     BertForSequenceClassification,
-    BertForLongSequenceClassification,
-    BertForLongSequenceClassificationCat,
+    # BertForLongSequenceClassification,
+    # BertForLongSequenceClassificationCat,
     BertTokenizer,
-    DNATokenizer,
+    # DNATokenizer,
     DistilBertConfig,
     DistilBertForSequenceClassification,
     DistilBertTokenizer,
@@ -70,7 +70,6 @@ from transformers import glue_compute_metrics as compute_metrics
 from transformers import glue_convert_examples_to_features as convert_examples_to_features
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
-
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -98,9 +97,9 @@ ALL_MODELS = sum(
 )
 
 MODEL_CLASSES = {
-    "dna": (BertConfig, BertForSequenceClassification, DNATokenizer),
-    "dnalong": (BertConfig, BertForLongSequenceClassification, DNATokenizer),
-    "dnalongcat": (BertConfig, BertForLongSequenceClassificationCat, DNATokenizer),
+    # "dna": (BertConfig, BertForSequenceClassification, DNATokenizer),
+    # "dnalong": (BertConfig, BertForLongSequenceClassification, DNATokenizer),
+    # "dnalongcat": (BertConfig, BertForLongSequenceClassificationCat, DNATokenizer),
     "bert": (BertConfig, BertForSequenceClassification, BertTokenizer),
     "xlnet": (XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer),
     "xlm": (XLMConfig, XLMForSequenceClassification, XLMTokenizer),
