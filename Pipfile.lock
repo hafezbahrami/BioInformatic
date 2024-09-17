@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d52cc7229f01ad0331820cdd6b5a431d5c5842c2a3d38e7fb3203680d5ed237a"
+            "sha256": "cf05ab2da01095b59dab95a3e683da97e164d2c7ca52665f8e06a3a35b65d522"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -2430,7 +2430,6 @@
             "version": "==5.14.3"
         },
         "transformers": {
-            "index": "pypi",
             "markers": "python_full_version >= '3.5.0'",
             "version": "==2.5.0"
         },

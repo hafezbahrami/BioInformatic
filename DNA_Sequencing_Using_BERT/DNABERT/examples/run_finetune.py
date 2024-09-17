@@ -42,10 +42,10 @@ from transformers import (
     AlbertTokenizer,
     BertConfig,
     BertForSequenceClassification,
-    # BertForLongSequenceClassification,
-    # BertForLongSequenceClassificationCat,
+    BertForLongSequenceClassification,
+    BertForLongSequenceClassificationCat,
     BertTokenizer,
-    # DNATokenizer,
+    DNATokenizer,
     DistilBertConfig,
     DistilBertForSequenceClassification,
     DistilBertTokenizer,
@@ -97,9 +97,9 @@ ALL_MODELS = sum(
 )
 
 MODEL_CLASSES = {
-    # "dna": (BertConfig, BertForSequenceClassification, DNATokenizer),
-    # "dnalong": (BertConfig, BertForLongSequenceClassification, DNATokenizer),
-    # "dnalongcat": (BertConfig, BertForLongSequenceClassificationCat, DNATokenizer),
+    "dna": (BertConfig, BertForSequenceClassification, DNATokenizer),
+    "dnalong": (BertConfig, BertForLongSequenceClassification, DNATokenizer),
+    "dnalongcat": (BertConfig, BertForLongSequenceClassificationCat, DNATokenizer),
     "bert": (BertConfig, BertForSequenceClassification, BertTokenizer),
     "xlnet": (XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer),
     "xlm": (XLMConfig, XLMForSequenceClassification, XLMTokenizer),
