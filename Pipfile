@@ -39,6 +39,8 @@ statsmodels="*"
 biopython="*"
 pybedtools="*"
 sentencepiece = "==0.1.96"  # SentencePiece for tokenizer support
+ipywidgets="*"
+jupyter="*"
 
 [requires]
 python_version = "3.10"

@@ -5,7 +5,7 @@ __pycache__/
 
 
 **/.vscode/
-
+**/runs/
 # C extensions
 *.so
 
