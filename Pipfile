@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-dnabert = {path = "./DNA_Sequencing_Using_BERT/DNABERT/", editable = true}
+transformers = {editable = true, path = "./DNA_Sequencing_Using_BERT/DNABERT/"}
 # -------------------------------
 matplotlib = "*"
 seaborn="*"

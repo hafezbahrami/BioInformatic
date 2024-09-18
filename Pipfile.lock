@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d400248d548846136a3390bd9c7eba6393764b0087fd57187f5b5396b4ebf012"
+            "sha256": "5684e11ddaa723a3a971e49fb978ce693d7ff02c9c38f429695cb106a6fe358e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -2430,8 +2430,9 @@
             "version": "==5.14.3"
         },
         "transformers": {
+            "editable": true,
             "markers": "python_full_version >= '3.5.0'",
-            "version": "==2.5.0"
+            "path": "./DNA_Sequencing_Using_BERT/DNABERT/"
         },
         "triton": {
             "hashes": [
