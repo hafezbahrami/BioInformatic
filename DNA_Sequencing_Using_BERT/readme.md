@@ -3,7 +3,8 @@ This repo contains a simple program that tries annotate the gene sequence of a B
 
 !["E_Coli_DNA](./img/E_coli_DNA.png)
 
-## 1 Preprocessing
+## 1 Getting Dataset Ready
+#### 1-1 Preprocessing
 preprocessing.py provides some code to read the genome files and make the test and train datasets  based on that. There are some unit test in this file that should be self-explainatory. The goal is in the main.py, we make the following calls to get the required datasets.
 
 **Run preprocessing.py**: Before going to main.py, it is better to run the preprocessing.py for a fake genome with much shorter genome length.
@@ -19,7 +20,7 @@ preProcessObj3.make_datasets()
 ```
 
 
-## 2 Reading the dataset
+#### 1-2 Reading the dataset
 We have 2 raw files to read and then build our test/train dataset . The [genome](./E_coli_K12_MG1655_U00096.3.txt) which contains the whole DNA-molecula-sequence including the coding and non-coding section (As we know the coding section is called gene), and the other file is the gene-annotation file: [gene-sequnce](./Gene_sequence.txt) which only shows details of each coding section of the total DNA-molecule-sequnce. We have 4,726 gene (coding sections) in E-coli DNA molecule.
 
 Below shows 3 rows, corresponding to 3 genes (coding section) annotated in [gene-sequnce](./Gene_sequence.txt). What matters the most is the starting and ending indedices to extract this partcular gene from the original [genome](./E_coli_K12_MG1655_U00096.3.txt) file:
@@ -41,35 +42,23 @@ A backward gene, means the gene starts at position 1600, ends at position 2100, 
 gene: start=1600, end=2100, strand=backward
 ```
 
-## 3 Code Notes
+#### 1-3 Code Notes
 ["Code Notes"](./notes) are in Persian :).
 
 
 
-## 4 Setting the environment
-Since DNABERT is an old code suing old versions of Transformers, dataset, tokenizer, .., it can be challenging to  set the right environment to run the project. The following steps should be done:
+## 2 Setting the environment
+Since DNABERT is an old code using old versions of Transformers, dataset, tokenizer, .., it can be challenging to  set the right environment to run the project. The following steps should be done:
 
-### 4-1 Downloading the pretrained DNABERT model
-The following code snippet in main.py tries to download a pretrained DNABERT and unzipp it. The unzipped files will be placed in a specific folder.
-If downloading from google-drive is problemaic, the code in colab file could be helpful.
+#### 2-1 Virtual Env
+- It is iportant to look at the pipfile, and current piplock file to see what versions (and the combination) works
+- It is important that the "transfomrer" package to be removed from pipefile, and instead include the **editable version of DNABERT** whose name is transformer
+    - Take a look at the setup.py for DNABERT folder
+    - Assuming, DNABERT is already pulled and unzipped in local (section below, 2-2)
+    - DNABERT package is named as transformer, and in its mandatory packages to install, "transformer" from huggingFace is noted and the version is "2.5.0".  Take a look at the setup.py, setup(XXXXX) method.
 
-```
-current_path = "./" if not debug_flag else file_dir + "/"
-if fine_tune_DANABERT_using_pretrained_model:
-    if not os.path.exists(current_path + "pretrained_DNA/"):
-        os.makedirs(current_path + "pretrained_DNA/")
-        print("A new directory is created to hold the pretrained DNAERT model.")
 
-    # as of now the gdown only downloads in Colab, not in an script
-    if not os.path.isfile(current_path + "6-new-12w-0.zip"):
-        url = "https://drive.google.com/u/0/uc?id=1BJjqb5Dl2lNMg2warsFQ0-Xvn1xxfFXC&export=download&confirm=t&uuid=574dd7fc-207b-43c4-b502-ab6a52549838&at=ALgDtswq3dLLBv3bezvOuM8dlJG-:1679328206346"
-        gdown.download(url, quiet=False)
-
-    with zipfile.ZipFile(current_path + "6-new-12w-0.zip", "r") as zip_ref:
-        zip_ref.extractall(current_path + "pretrained_DNA/")
-```
-
-### 4-2 Cloning DNABERT
+#### 2-2 Cloning DNABERT code-base
 cloning the DNABERT first:
 
 ```
@@ -93,5 +82,22 @@ pybedtools
 sentencepiece==0.1.99
 ```
 
-If using a pipfile, then after locking the file, it is important to istall an editable version of DNABERT. 
+#### 2-3 Downloading the pretrained DNABERT model
+The following code snippet in main.py tries to download a pretrained DNABERT and unzipp it. The unzipped files will be placed in a specific folder.
+If downloading from google-drive is problemaic, the code in colab file could be helpful.
 
+```
+current_path = "./" if not debug_flag else file_dir + "/"
+if fine_tune_DANABERT_using_pretrained_model:
+    if not os.path.exists(current_path + "pretrained_DNA/"):
+        os.makedirs(current_path + "pretrained_DNA/")
+        print("A new directory is created to hold the pretrained DNAERT model.")
+
+    # as of now the gdown only downloads in Colab, not in an script
+    if not os.path.isfile(current_path + "6-new-12w-0.zip"):
+        url = "https://drive.google.com/u/0/uc?id=1BJjqb5Dl2lNMg2warsFQ0-Xvn1xxfFXC&export=download&confirm=t&uuid=574dd7fc-207b-43c4-b502-ab6a52549838&at=ALgDtswq3dLLBv3bezvOuM8dlJG-:1679328206346"
+        gdown.download(url, quiet=False)
+
+    with zipfile.ZipFile(current_path + "6-new-12w-0.zip", "r") as zip_ref:
+        zip_ref.extractall(current_path + "pretrained_DNA/")
+```
