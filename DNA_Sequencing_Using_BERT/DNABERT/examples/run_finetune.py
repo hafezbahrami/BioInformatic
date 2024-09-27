@@ -213,18 +213,14 @@ def train(args, train_dataset, model, tokenizer):
         )
 
     # Train!
-    logger.info("***** Running training *****")
-    logger.info("  Num examples = %d", len(train_dataset))
-    logger.info("  Num Epochs = %d", args.num_train_epochs)
-    logger.info("  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
-    logger.info(
-        "  Total train batch size (w. parallel, distributed & accumulation) = %d",
-        args.train_batch_size
-        * args.gradient_accumulation_steps
-        * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
-    )
-    logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
-    logger.info("  Total optimization steps = %d", t_total)
+    logger.info("\n\n***** Running training *****")
+    logger.info(f"  Num examples = {len(train_dataset)}")
+    logger.info(f"  Num Epochs = {args.num_train_epochs}")
+    logger.info(f"  Instantaneous batch size per GPU = {args.per_gpu_train_batch_size}")
+    total_train_bs = args.train_batch_size * args.gradient_accumulation_steps * (torch.distributed.get_world_size() if args.local_rank != -1 else 1)
+    logger.info(f"  Total train batch size (w. parallel, distributed & accumulation) = {total_train_bs}" )
+    logger.info(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
+    logger.info(f"  Total optimization steps = {t_total}")
 
     global_step = 0
     epochs_trained = 0
@@ -240,9 +236,9 @@ def train(args, train_dataset, model, tokenizer):
         steps_trained_in_current_epoch = global_step % (len(train_dataloader) // args.gradient_accumulation_steps)
 
         logger.info("  Continuing training from checkpoint, will skip to saved global_step")
-        logger.info("  Continuing training from epoch %d", epochs_trained)
-        logger.info("  Continuing training from global step %d", global_step)
-        logger.info("  Will skip the first %d steps in the first epoch", steps_trained_in_current_epoch)
+        logger.info(f"  Continuing training from epoch {epochs_trained}")
+        logger.info(f"  Continuing training from global step {global_step}")
+        logger.info(f"  Will skip the first {steps_trained_in_current_epoch} steps in the first epoch\n\n")
 
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
@@ -702,10 +698,10 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
         ),
     )
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
-        logger.info("Loading features from cached file %s", cached_features_file)
+        logger.info(f"\nLoading features from cached file {cached_features_file}")
         features = torch.load(cached_features_file)
     else:
-        logger.info("Creating features from dataset file at %s", args.data_dir)
+        logger.info(f"\nCreating features from dataset file at {args.data_dir}" )
         label_list = processor.get_labels()
         if task in ["mnli", "mnli-mm"] and args.model_type in ["roberta", "xlmroberta"]:
             # HACK(label indices are swapped in RoBERTa pretrained model)
@@ -715,7 +711,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
         )   
 
         
-        print("finish loading examples")
+        print("finished loading examples")
 
         # params for convert_examples_to_features
         max_length = args.max_seq_length
@@ -764,7 +760,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
                     
 
         if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s", cached_features_file)
+            logger.info(f"Saving features into cached file {cached_features_file}")
             torch.save(features, cached_features_file)
 
     if args.local_rank == 0 and not evaluate:
@@ -1027,13 +1023,8 @@ def main():
         level=logging.INFO if args.local_rank in [-1, 0] else logging.WARN,
     )
     logger.warning(
-        "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-        args.local_rank,
-        device,
-        args.n_gpu,
-        bool(args.local_rank != -1),
-        args.fp16,
-    )
+        f"Process rank: {args.local_rank}, device: {device}, n_gpu: {args.n_gpu}, distributed training: {bool(args.local_rank != -1)}, 16-bits training: {args.fp16}")
+
 
     # Set seed
     set_seed(args)
@@ -1053,6 +1044,7 @@ def main():
     
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    #import code; code.interact(local=locals())
 
     if not args.do_visualize and not args.do_ensemble_pred:
         config = config_class.from_pretrained(
@@ -1083,22 +1075,35 @@ def main():
             config=config,
             cache_dir=args.cache_dir if args.cache_dir else None,
         )
-        logger.info('finish loading model')
+        logger.info('\nfinished loading model\n\n')
 
         if args.local_rank == 0:
             torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
         model.to(args.device)
 
-        logger.info("Training/evaluation parameters %s", args)
+        logger.info(f"\n\nTraining/evaluation parameters:\n {args}", )
+        logger.info('\n\n')
 
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Training
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     if args.do_train:
         train_dataset = load_and_cache_examples(args, args.task_name, tokenizer, evaluate=False)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
+    #import code; code.interact(local=locals())
+
+
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0) and args.task_name != "dna690":
         # Create output directory if needed
         if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
@@ -1121,7 +1126,15 @@ def main():
         tokenizer = tokenizer_class.from_pretrained(args.output_dir)
         model.to(args.device)
 
+    #import code; code.interact(local=locals())
+
+
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Evaluation
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     results = {}
     if args.do_eval and args.local_rank in [-1, 0]:
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
@@ -1142,7 +1155,15 @@ def main():
             result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
             results.update(result)
 
+    #import code; code.interact(local=locals())
+
+
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Prediction
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     predictions = {}
     if args.do_predict and args.local_rank in [-1, 0]:
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
@@ -1153,7 +1174,14 @@ def main():
         model.to(args.device)
         prediction = predict(args, model, tokenizer, prefix=prefix)
 
+    #import code; code.interact(local=locals())
+
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Visualize
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     if args.do_visualize and args.local_rank in [-1, 0]:
         visualization_models = [3,4,5,6] if not args.visualize_models else [args.visualize_models]
 
@@ -1199,7 +1227,14 @@ def main():
         np.save(os.path.join(args.predict_dir, "atten.npy"), scores)
         np.save(os.path.join(args.predict_dir, "pred_results.npy"), all_probs)
 
+    #import code; code.interact(local=locals())
+
+
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # ensemble prediction
+    # ---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     if args.do_ensemble_pred and args.local_rank in [-1, 0]:
 
         for kmer in range(3,7):
@@ -1271,9 +1306,6 @@ def main():
         logger.info("***** Ensemble results {} *****".format(prefix))
         for key in sorted(ensemble_results.keys()):
             logger.info("  %s = %s", key, str(ensemble_results[key]))    
-
-
-            
 
 
     return results

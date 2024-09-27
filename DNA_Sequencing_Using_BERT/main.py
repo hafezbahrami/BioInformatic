@@ -18,7 +18,7 @@ debug_flag = preprocessing.debug_flag
 file_dir = path.dirname(path.abspath(__file__))
 
 def train():
-    # (1) creating the datasets
+    # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
     ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
     preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                 train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
@@ -28,7 +28,7 @@ def train():
     # (2) Load a pretrained-DNA-BERT model
     helper.load_pretrained_dnabert_model()
     if not path.isdir(file_dir + "/DNABERT"):
-        raise Exception("DNABERT must be git-cloned locally. Please read the readme.md. After cloning, the function below should be run to make the required changes. DNABERT must then be installed.")
+        raise Exception("DNABERT must be git-cloned locally. Please read the readme.md. After cloning, the function below should be run to make the required changes. DNABERT must then be installed (as editable package).")
     helper.minor_version_changes_in_DNABERT()
     helper.setting_env_variables_for_DNABERT(kmer_val)
 
@@ -45,7 +45,7 @@ def train():
                                                         "--model_type", "dna",
                                                         "--n_process", str(8),  
                                                         "--model_name_or_path", MODEL_PATH,
-                                                        "--task_name", "dnaprom",
+                                                        "--task_name", "dnaprom",  # dnaprom --> refers to DNA Promoter
                                                         "--output_dir", OUTPUT_PATH,
                                                         "--tokenizer_name", TOKENIZER_NAME,
                                                         "--predict_dir", PREDICTION_PATH,
