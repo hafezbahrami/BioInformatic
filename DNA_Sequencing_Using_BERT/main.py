@@ -56,7 +56,7 @@ def train():
                                                         "--learning_rate", str(1e-6),
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
-                                                        "--num_train_epochs", str(3.0),
+                                                        "--num_train_epochs", str(10.0),
                                                         "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(100),
                                                         "--save_steps", str(60000),
