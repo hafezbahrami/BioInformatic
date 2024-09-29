@@ -155,6 +155,9 @@ def _rotate_checkpoints(args, checkpoint_prefix="checkpoint", use_mtime=False) -
         logger.info("Deleting older checkpoint [{}] due to args.save_total_limit".format(checkpoint))
         shutil.rmtree(checkpoint)
 
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def train(args, train_dataset, model, tokenizer):
     """ Train the model """
     if args.local_rank in [-1, 0]:
@@ -247,11 +250,14 @@ def train(args, train_dataset, model, tokenizer):
     )
     set_seed(args)  # Added here for reproductibility
 
+    logger.info(f"\n\n")
+
     best_auc = 0
     last_auc = 0
     stop_count = 0
-
-    for _ in train_iterator:
+    
+    for epoch_num in train_iterator:
+        logger.info(f"------ Training Epoch {epoch_num+1} ------")
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
 
@@ -262,12 +268,12 @@ def train(args, train_dataset, model, tokenizer):
 
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
-            inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}
+            inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}    # inputs["input_ids"].shape: [Bs, 75]    &&    inputs["attention_mask"].shape: [Bs, 75]    &&    inputs["labels"].shape: [Bs]
             if args.model_type != "distilbert":
                 inputs["token_type_ids"] = (
                     batch[2] if args.model_type in TOKEN_ID_GROUP else None
                 )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
-            outputs = model(**inputs)
+            outputs = model(**inputs)                                                           # loss=outputs[0]    &&  logits=output[1]  --> logits.shape=[Bs, #_of_class]=[Bs, 2]
             loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
 
             if args.n_gpu > 1:
@@ -371,6 +377,9 @@ def train(args, train_dataset, model, tokenizer):
     return global_step, tr_loss / global_step
 
 
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def evaluate(args, model, tokenizer, prefix="", evaluate=True):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     eval_task_names = ("mnli", "mnli-mm") if args.task_name == "mnli" else (args.task_name,)
@@ -409,12 +418,12 @@ def evaluate(args, model, tokenizer, prefix="", evaluate=True):
             batch = tuple(t.to(args.device) for t in batch)
 
             with torch.no_grad():
-                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}
+                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}    # inputs["input_ids"].shape: [Bs, 75]    &&    inputs["attention_mask"].shape: [Bs, 75]    &&    inputs["labels"].shape: [Bs]
                 if args.model_type != "distilbert":
                     inputs["token_type_ids"] = (
                         batch[2] if args.model_type in TOKEN_ID_GROUP else None
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
-                outputs = model(**inputs)
+                outputs = model(**inputs)                                                           # loss=outputs[0]    &&  logits=output[1]  --> logits.shape=[Bs, #_of_class]=[Bs, 2]
                 tmp_eval_loss, logits = outputs[:2]
 
                 eval_loss += tmp_eval_loss.mean().item()
@@ -468,7 +477,9 @@ def evaluate(args, model, tokenizer, prefix="", evaluate=True):
         return results
 
 
-
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def predict(args, model, tokenizer, prefix=""):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     pred_task_names = (args.task_name,)
@@ -494,9 +505,9 @@ def predict(args, model, tokenizer, prefix=""):
             model = torch.nn.DataParallel(model)
 
         # Eval!
-        logger.info("***** Running prediction {} *****".format(prefix))
-        logger.info("  Num examples = %d", len(pred_dataset))
-        logger.info("  Batch size = %d", args.pred_batch_size)
+        logger.info("\n\n***** Running prediction {} *****".format(prefix))
+        logger.info(f"  Num examples = {len(pred_dataset)}", )
+        logger.info(f"  Batch size = {args.pred_batch_size}")
         pred_loss = 0.0
         nb_pred_steps = 0
         preds = None
@@ -506,12 +517,12 @@ def predict(args, model, tokenizer, prefix=""):
             batch = tuple(t.to(args.device) for t in batch)
 
             with torch.no_grad():
-                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}
+                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}    # inputs["input_ids"].shape: [Bs, 75]    &&    inputs["attention_mask"].shape: [Bs, 75]    &&    inputs["labels"].shape: [Bs]
                 if args.model_type != "distilbert":
                     inputs["token_type_ids"] = (
                         batch[2] if args.model_type in TOKEN_ID_GROUP else None
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
-                outputs = model(**inputs)
+                outputs = model(**inputs)                                                           # loss=outputs[0]    &&  logits=output[1]  --> logits.shape=[Bs, #_of_class]=[Bs, 2]
                 _, logits = outputs[:2]
 
             if preds is None:
@@ -542,12 +553,15 @@ def predict(args, model, tokenizer, prefix=""):
         if not os.path.exists(pred_output_dir):
                os.makedir(pred_output_dir)
         output_pred_file = os.path.join(pred_output_dir, "pred_results.npy")
-        logger.info("***** Pred results {} *****".format(prefix))
+        logger.info(f"\n***** Pred results {prefix} *****")
         for key in sorted(result.keys()):
-            logger.info("  %s = %s", key, str(result[key]))
+            logger.info(f"  {key} = {result[key]:.4f}")
         np.save(output_pred_file, probs)
 
 
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def format_attention(attention):
     squeezed = []
     for layer_attention in attention:
@@ -560,6 +574,9 @@ def format_attention(attention):
     return torch.stack(squeezed).unsqueeze(0)
 
 
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def visualize(args, model, tokenizer, kmer, prefix=""):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     pred_task_names = (args.task_name,)
@@ -611,12 +628,12 @@ def visualize(args, model, tokenizer, kmer, prefix=""):
             batch = tuple(t.to(args.device) for t in batch)
 
             with torch.no_grad():
-                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}
+                inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}    # inputs["input_ids"].shape: [Bs, 75]    &&    inputs["attention_mask"].shape: [Bs, 75]    &&    inputs["labels"].shape: [Bs]
                 if args.model_type != "distilbert":
                     inputs["token_type_ids"] = (
                         batch[2] if args.model_type in TOKEN_ID_GROUP else None
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
-                outputs = model(**inputs)
+                outputs = model(**inputs)                                                           # loss=outputs[0]    &&  logits=output[1]  --> logits.shape=[Bs, #_of_class]=[Bs, 2]
                 attention = outputs[-1][-1]
                 _, logits = outputs[:2]
 
@@ -671,7 +688,9 @@ def visualize(args, model, tokenizer, kmer, prefix=""):
     return scores, probs
 
 
-
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 def load_and_cache_examples(args, task, tokenizer, evaluate=False):
     if args.local_rank not in [-1, 0] and not evaluate:
         torch.distributed.barrier()  # Make sure only the first process in distributed training process the dataset, and the others will use the cache
@@ -1168,7 +1187,7 @@ def main():
     if args.do_predict and args.local_rank in [-1, 0]:
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
         checkpoint = args.output_dir
-        logger.info("Predict using the following checkpoint: %s", checkpoint)
+        logger.info(f"Predict using the following checkpoint: {checkpoint}")
         prefix = ''
         model = model_class.from_pretrained(checkpoint)
         model.to(args.device)

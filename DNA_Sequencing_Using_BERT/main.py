@@ -19,7 +19,11 @@ file_dir = path.dirname(path.abspath(__file__))
 
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
-    ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
+    reduced_version_of_data = True # For ddebug purpose, we want to use smaller dataset
+    if reduced_version_of_data:
+        ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
+    else:
+        ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
     preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                 train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
                                     genome_name="ecoli")
@@ -41,22 +45,25 @@ def train():
 
     fineTuneFileNameAndLocation = file_dir + "/DNABERT/examples/run_finetune.py"
     resultTrain = subprocess.check_output(["python", fineTuneFileNameAndLocation, 
-                                                        "--data_dir", DATA_PATH,                                           
-                                                        "--model_type", "dna",
-                                                        "--n_process", str(8),  
+                                                        "--data_dir", DATA_PATH,
                                                         "--model_name_or_path", MODEL_PATH,
-                                                        "--task_name", "dnaprom",  # dnaprom --> refers to DNA Promoter
                                                         "--output_dir", OUTPUT_PATH,
-                                                        "--tokenizer_name", TOKENIZER_NAME,
                                                         "--predict_dir", PREDICTION_PATH,
-                                                        "--max_seq_length", str(window_size), 
+
+                                                        "--model_type", "dna",
+                                                        "--task_name", "dnaprom",  # dnaprom --> refers to DNA Promoter
+                                                        "--tokenizer_name", TOKENIZER_NAME,
+                                                        "--max_seq_length", str(window_size),
+
                                                         "--do_train", 
+                                                        "--num_train_epochs", str(3.0),
+
+                                                        "--n_process", str(8),  
                                                         "--per_gpu_train_batch_size", str(16),
                                                         "--per_gpu_eval_batch_size", str(16),
                                                         "--learning_rate", str(1e-6),
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
-                                                        "--num_train_epochs", str(10.0),
                                                         "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(100),
                                                         "--save_steps", str(60000),
@@ -64,54 +71,60 @@ def train():
     print(resultTrain)
 
     # # (4) PREDICT: Running fin-tunning in prediction mode in DNABERT: run the main() function in the DNABERT package
-    resultPredict = subprocess.check_output(["python", fineTuneFileNameAndLocation, 
-                                                        "--model_type", "dna",
-                                                        "--tokenizer_name", TOKENIZER_NAME,
-                                                        "--model_name_or_path", MODEL_PATH,
-                                                        "--task_name", "dnaprom",
-                                                        "--do_predict", 
+    resultPredict = subprocess.check_output(["python", fineTuneFileNameAndLocation,
                                                         "--data_dir", DATA_PATH,
-                                                        "--max_seq_length", str(window_size), 
-                                                        "--per_gpu_eval_batch_size", str(16),
-                                                        "--per_gpu_train_batch_size", str(16),
-                                                        "--learning_rate", str(1e-6),
-                                                        "--num_train_epochs", str(3.0),
+                                                        "--model_name_or_path", MODEL_PATH,
                                                         "--output_dir", OUTPUT_PATH,
                                                         "--predict_dir", PREDICTION_PATH,
+
+                                                        "--model_type", "dna",
+                                                        "--task_name", "dnaprom",  # dnaprom --> refers to DNA Promoter
+                                                        "--tokenizer_name", TOKENIZER_NAME,
+                                                        "--max_seq_length", str(window_size),
+
+                                                        "--do_predict", 
+                                                        "--num_train_epochs", str(3.0),
+
+                                                        "--n_process", str(8),  
+                                                        "--per_gpu_train_batch_size", str(16),
+                                                        "--per_gpu_eval_batch_size", str(16),
+                                                        "--learning_rate", str(1e-6),
+                                                        "--weight_decay", str(0.01),
+                                                        "--hidden_dropout_prob", str(0.1),
+                                                        "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(100),
                                                         "--save_steps", str(60000),
-                                                        "--warmup_percent", str(0.06),
-                                                        "--hidden_dropout_prob", str(0.1),
-                                                        "--overwrite_output",
-                                                        "--weight_decay", str(0.01),
-                                                        "--n_process", str(8)])
+                                                        "--overwrite_output",])
     print(resultPredict)    
     
     # (5) VISUALIZATION: Running fin-tunning in visualization mode in DNABERT: run the main() function in the DNABERT package
     # After running the following snippet, we should be able to see some *.npy file in the prediction folder
-    resultVisualization = subprocess.check_output(["python", fineTuneFileNameAndLocation, 
-                                                        "--model_type", "dna",
-                                                        "--tokenizer_name", TOKENIZER_NAME,
-                                                        "--model_name_or_path", MODEL_PATH,
-                                                        "--task_name", "dnaprom",
-                                                        "--do_visualize",
-                                                        "--visualize_data_dir", DATA_PATH,
-                                                        "--visualize_models", str(kmer_val),
+    resultVisualization = subprocess.check_output(["python", fineTuneFileNameAndLocation,
                                                         "--data_dir", DATA_PATH,
-                                                        "--max_seq_length", str(window_size), 
-                                                        "--per_gpu_eval_batch_size", str(16),
-                                                        "--per_gpu_train_batch_size", str(16),
-                                                        "--learning_rate", str(1e-6),
-                                                        "--num_train_epochs", str(3.0),
+                                                        "--model_name_or_path", MODEL_PATH,
                                                         "--output_dir", OUTPUT_PATH,
                                                         "--predict_dir", PREDICTION_PATH,
+
+                                                        "--model_type", "dna",
+                                                        "--task_name", "dnaprom",  # dnaprom --> refers to DNA Promoter
+                                                        "--tokenizer_name", TOKENIZER_NAME,
+                                                        "--max_seq_length", str(window_size),
+
+                                                        "--do_visualize",
+                                                        "--visualize_data_dir", DATA_PATH,
+                                                        "--visualize_models", str(kmer_val), 
+                                                        "--num_train_epochs", str(3.0),
+
+                                                        "--n_process", str(8),  
+                                                        "--per_gpu_train_batch_size", str(16),
+                                                        "--per_gpu_eval_batch_size", str(16),
+                                                        "--learning_rate", str(1e-6),
+                                                        "--weight_decay", str(0.01),
+                                                        "--hidden_dropout_prob", str(0.1),
+                                                        "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(100),
                                                         "--save_steps", str(60000),
-                                                        "--warmup_percent", str(0.06),
-                                                        "--hidden_dropout_prob", str(0.1),
-                                                        "--overwrite_output",
-                                                        "--weight_decay", str(0.01),
-                                                        "--n_process", str(8)])   
+                                                        "--overwrite_output",])  
     print(resultVisualization)
 
 
@@ -127,9 +140,10 @@ def train():
     if kmer_val != 6 or window_size != 75:
         raise Exception("Below code is temporariy and when kmer=6 and window_size=75")
     genome_label_test = []
-    for line in k_mer_seq_test_X_and_Y_lab_dict["train_6_labels_75"]:
+    for line in k_mer_seq_test_X_and_Y_lab_dict["test_6_labels_75"]:
         for _ in range(window_size):
-            genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method
+            if line[-2].isdigit():
+                genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method
     gt_labels_test = np.array(genome_label_test)
 
     evaluation.evaluate(datapath=file_loc, losspath=file_loc, seq_len=window_size,
