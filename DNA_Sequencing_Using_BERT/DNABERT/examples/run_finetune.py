@@ -252,6 +252,13 @@ def train(args, train_dataset, model, tokenizer):
 
     logger.info(f"\n\n")
 
+    # Clear up the loss.txt file from previous runs
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    output_dir_loss = os.path.join(args.output_dir, "loss.txt")
+    with open(output_dir_loss, "w") as loss_writer:
+        pass
+
     best_auc = 0
     last_auc = 0
     stop_count = 0
@@ -339,6 +346,10 @@ def train(args, train_dataset, model, tokenizer):
                     for key, value in logs.items():
                         tb_writer.add_scalar(key, value, global_step)
                     print(json.dumps({**logs, **{"step": global_step}}))
+
+                    with open(output_dir_loss, "a") as loss_writer:
+                        json.dump({**logs, **{"step": global_step}}, loss_writer)
+                        loss_writer.write("\n")
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     if args.task_name == "dna690" and results["auc"] < best_auc:

@@ -46,9 +46,6 @@ def plot_distribution(data, th):
     lbls = [x / 1000 for x in locs]
 
     plt.xticks(ticks=locs[1:len(locs) - 1], labels=lbls[1:len(lbls) - 1])
-    if os.path.exists("./figures/plots/"):
-        shutil.rmtree("./figures/plots/")
-    os.makedirs("./figures/plots/")
     plt.savefig("./figures/plots/"+"distribution.png")
 
 
@@ -65,10 +62,6 @@ def plot_confusion(tp,tn,fp,fn):
     fig.suptitle('Confusion matrix')
     plt.xlabel("Predictions")
     plt.ylabel("Actual labels")
-
-    if os.path.exists("./figures/plots/"):
-        shutil.rmtree("./figures/plots/")
-    os.makedirs("./figures/plots/")
     plt.savefig("./figures/plots/" + "confusion.png")
 
 
@@ -82,10 +75,6 @@ def plot_roc(gt_labels, probas):
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
     plt.tight_layout(pad=0.5)
-
-    if os.path.exists("./figures/plots/"):
-        shutil.rmtree("./figures/plots/")
-    os.makedirs("./figures/plots/")
     plt.savefig("./figures/plots/" + "roc.png")
 
 
@@ -123,10 +112,6 @@ def plot_loss(path):
     plt.xlabel("Steps")
     fig.suptitle(f'Loss')
     plt.tight_layout(pad=0.5)
-
-    if os.path.exists("./figures/plots/"):
-        shutil.rmtree("./figures/plots/")
-    os.makedirs("./figures/plots/")
     plt.savefig("./figures/plots/" + "loss.png")
     #plt.plot(steps, rates)
 
@@ -153,7 +138,7 @@ def make_image(path):
 def evaluate(datapath, losspath, seq_len, gt_labels, img_name, threshold=0.5):
     """Calculate the evaluation metrics and show the plots"""
     data = np.load(datapath)
-    print(f'Predicted values are between {np.min(data):.4f} and {np.max(data):.4f}.')
+    print(f'\n\nPredicted probability values are between {np.min(data):.4f} and {np.max(data):.4f}.')
     predicted_labels, probabs = predict_label_from_prob(data, seq_len, threshold)
     print(f'Count of predicted labels: {len(predicted_labels):,d}')
     print(f'Count of gt labels: {len(gt_labels):,d}')
@@ -195,11 +180,18 @@ def evaluate(datapath, losspath, seq_len, gt_labels, img_name, threshold=0.5):
     print(f'F1-score: {2 * prec * rec / (prec + rec):.4f}')
     print(f'Precision: {prec:.4f}')
     print(f'Recall: {rec:.4f}')
+    
+    # Delete old folder: make things ready for current run
+    if os.path.exists("./figures/plots/"):
+        shutil.rmtree("./figures/plots/")
+    os.makedirs("./figures/plots/")
+
     plot_distribution(data, threshold)
     plot_confusion(tp, tn, fp, fn)
     plot_roc(gt_labels[:len(probabs)], probabs)
-    plot_loss(losspath)
-    make_image('figures/plots/ecoli/' + img_name)
+    if losspath:
+        plot_loss(losspath)
+    make_image('figures/plots/' + img_name)
 
 
 if __name__ == "__main__":

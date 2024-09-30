@@ -19,7 +19,7 @@ file_dir = path.dirname(path.abspath(__file__))
 
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
-    reduced_version_of_data = True # For ddebug purpose, we want to use smaller dataset
+    reduced_version_of_data = False                                                     # For ddebug purpose, we want to use smaller dataset
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
     else:
@@ -56,7 +56,7 @@ def train():
                                                         "--max_seq_length", str(window_size),
 
                                                         "--do_train", 
-                                                        "--num_train_epochs", str(3.0),
+                                                        "--num_train_epochs", str(10.0),
 
                                                         "--n_process", str(8),  
                                                         "--per_gpu_train_batch_size", str(16),
@@ -65,7 +65,7 @@ def train():
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
                                                         "--warmup_percent", str(0.06),
-                                                        "--logging_steps", str(100),
+                                                        "--logging_steps", str(1000),
                                                         "--save_steps", str(60000),
                                                         "--overwrite_output",])
     print(resultTrain)
@@ -130,9 +130,12 @@ def train():
 
     # (6) POSTPROCESSING-EVALUATION:
     if path.isdir(file_dir + f"/prediction/{kmer_val}/"):
-        file_loc = file_dir + f"/prediction/{kmer_val}/pred_results.npy"
+        pred_file_loc = file_dir + f"/prediction/{kmer_val}/pred_results.npy"
     else:
-        file_loc = file_dir + f"/pred_results.npy"
+        pred_file_loc = file_dir + f"/pred_results.npy"
+    
+    if path.exists(OUTPUT_PATH + "loss.txt"):
+        loss_file_loc = OUTPUT_PATH + "loss.txt"
 
     # # making up the test labels. There should be a better way to create this
     # gt_labels_test_length = 1392496
@@ -146,8 +149,8 @@ def train():
                 genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method
     gt_labels_test = np.array(genome_label_test)
 
-    evaluation.evaluate(datapath=file_loc, losspath=file_loc, seq_len=window_size,
-            gt_labels=gt_labels_test, img_name="my_image_name", threshold=0.5)    
+    evaluation.evaluate(datapath=pred_file_loc, losspath=loss_file_loc, seq_len=window_size,
+            gt_labels=gt_labels_test, img_name="all_res_together.png", threshold=0.5)    
 
 if __name__ == "__main__":
     train()
