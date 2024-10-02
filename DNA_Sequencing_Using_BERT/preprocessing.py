@@ -83,6 +83,16 @@ def _get_data(genome_seq_dir: str = "./E_coli_K12_MG1655_U00096.3.txt", gt_dir: 
     return ecoli, gt_genome_seq_data_ordered, gt_genome_seq_data_forward, gt_genome_seq_data_reverse
 
 
+def _helper_statistics(data, dataset_type="train"):
+    print(f"\nstatistics on {dataset_type} set:")
+    count_label_0, count_label_1 = 0, 0
+    for data_point in data:
+        if data_point[-2] =="0": count_label_0 += 1
+        if data_point[-2] =="1": count_label_1 += 1
+    print(f"number of data-points labeled 1: {count_label_1}")
+    print(f"number of data-points labeled 0: {count_label_0}")
+    print(f"Ratio label0 / label1: {(count_label_0/count_label_1)*100.:.1f}%")
+
 class PreProcessData():
     def __init__(self, genome, gt_gen_seq_coor, train_fraction=0.7, windows=[75], k_mer_val=3,
                 genome_name="ecoli"):
@@ -303,6 +313,11 @@ class PreProcessData():
             
             k_mer_seq_train_X_and_Y_lab_dict[f'train_{self.k_mer_val}_labels_{w}'] = k_mer_seq_train_data
             k_mer_seq_test_X_and_Y_lab_dict[f'test_{self.k_mer_val}_labels_{w}'] = k_mer_seq_test_data
+
+            # Do some statistics on training dataset
+            _helper_statistics(k_mer_seq_train_data[1:], "train")
+            _helper_statistics(k_mer_seq_test_data[1:], "test")
+
         return k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict
 
 

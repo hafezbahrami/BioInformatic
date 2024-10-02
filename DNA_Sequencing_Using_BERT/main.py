@@ -20,14 +20,18 @@ file_dir = path.dirname(path.abspath(__file__))
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
     reduced_version_of_data = False                                                     # For ddebug purpose, we want to use smaller dataset
+    num_train_epochs = 10
+    logging_steps = 1000
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
+        num_train_epochs = 1
+        logging_steps = 1
     else:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
     preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                 train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
                                     genome_name="ecoli")
-    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
+    _, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
 
     # (2) Load a pretrained-DNA-BERT model
     helper.load_pretrained_dnabert_model()
@@ -56,7 +60,7 @@ def train():
                                                         "--max_seq_length", str(window_size),
 
                                                         "--do_train", 
-                                                        "--num_train_epochs", str(10.0),
+                                                        "--num_train_epochs", str(num_train_epochs),
 
                                                         "--n_process", str(8),  
                                                         "--per_gpu_train_batch_size", str(16),
@@ -65,7 +69,7 @@ def train():
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
                                                         "--warmup_percent", str(0.06),
-                                                        "--logging_steps", str(1000),
+                                                        "--logging_steps", str(logging_steps),
                                                         "--save_steps", str(60000),
                                                         "--overwrite_output",])
     print(resultTrain)
