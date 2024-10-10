@@ -57,7 +57,7 @@ def plot_confusion(tp,tn,fp,fn):
     df_cm = pd.DataFrame(results)
     strings = np.asarray([['TN', 'FP'], ['FN', 'TP']])
     labels = (np.asarray(["{0}: {1}".format(string, value)   for string, value in zip(strings.flatten(),  results.flatten())]) ).reshape(2, 2)
-    fig = plt.figure(figsize = (7,6))
+    fig = plt.figure(figsize = (6,6))
     sn.set(font_scale=2)
     sn.heatmap(df_cm, annot=labels, fmt="", cmap="rainbow", xticklabels=False, yticklabels=False, cbar=False)
     fig.suptitle('Confusion matrix')
@@ -104,23 +104,23 @@ def get_loss(path):
         avg = float(line[-1])
   rates = [x.get('learning_rate') for x in data]
   losses = [x.get('loss') for x in data]
-  epochs = [x.get('step') for x in data]
-  return epochs, losses, avg
+  steps = [x.get('step') for x in data]
+  return steps, losses, avg
 
 
 
 def plot_loss(path):
     """Visualize the model performation bu showing the loss values during the training"""
-    epochs, losses, avg = get_loss(path)
+    steps, losses, avg = get_loss(path)
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.plot(epochs, losses, label='training loss')
+    ax.plot(steps, losses, label='training loss')
     if avg > 0:
         ax.axhline(y=avg, color='red', label='avg loss')
         legend = ['training loss', f'avg loss {avg:.4f}']
     else:
         legend = ['training loss']    
     ax.legend(legend)
-    ax.set_xlabel("Epochs")
+    ax.set_xlabel("steps")
     fig.suptitle(f'Loss')
     # Set the background color of the figure to white
     fig.patch.set_facecolor('white')
@@ -130,7 +130,7 @@ def plot_loss(path):
     ax.spines['left'].set_color('black')
     fig.tight_layout(pad=0.5)
     fig.savefig("./figures/plots/" + "loss.png")
-    #fig.plot(epochs, rates)
+    #fig.plot(steps, rates)
 
 
 
