@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import math
 import numpy as np
 import pandas as pd
 import seaborn as sn
@@ -72,8 +73,12 @@ def plot_roc(gt_labels, probas):
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.plot(fpr, tpr)
     fig.suptitle('ROC')
-    fig.set_facecolor('white')
+    # Set the background color of the figure to white
+    fig.patch.set_facecolor('white')
+    # Set the background color of the axes to white
     ax.set_facecolor('white')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['left'].set_color('black')
     ax.set_xlabel('False positive rate')
     ax.set_ylabel('True positive rate')
     fig.tight_layout(pad=0.5)
@@ -117,8 +122,12 @@ def plot_loss(path):
     ax.legend(legend)
     ax.set_xlabel("Epochs")
     fig.suptitle(f'Loss')
-    fig.set_facecolor('white')
+    # Set the background color of the figure to white
+    fig.patch.set_facecolor('white')
+    # Set the background color of the axes to white
     ax.set_facecolor('white')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['left'].set_color('black')
     fig.tight_layout(pad=0.5)
     fig.savefig("./figures/plots/" + "loss.png")
     #fig.plot(epochs, rates)
@@ -203,13 +212,16 @@ def evaluate(datapath, losspath, seq_len, gt_labels, img_name, threshold=0.5):
 
 
 if __name__ == "__main__":
-    file_loc = "../../prediction/6/pred_results.npy"
-    file_loc = "./pred_results.npy"
+    import os
+    current_file_directory = os.path.dirname(os.path.abspath(__file__))
+    pred_prob_file_loc = cc = os.path.join(current_file_directory , "prediction/6/pred_results.npy")
+    loss_file_loc = cc = os.path.join(current_file_directory , "output/6/loss.txt")
 
     genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(1392496)]
     gt_labels = np.array(genome_label_test)
 
-    xx= np.load(file_loc)
+    xx= np.load(pred_prob_file_loc)
 
-    evaluate(datapath=file_loc, losspath=file_loc, seq_len=75,
-            gt_labels=gt_labels, img_name="my_image_name", th=0.5)
+    evaluate(datapath=pred_prob_file_loc, losspath=loss_file_loc, seq_len=75,
+            gt_labels=gt_labels, img_name="all_res_together.png", threshold=0.5)
+    
