@@ -25,15 +25,13 @@ def predict_label_from_prob(data, seq_len, threshold=0.5):
 
 
 
-def plot_distribution(data, th):
-    """Visualize the distribution of predicted values."""
-    vals = [int(v * 1000) for v in data]
-    counts = Counter(vals)
-    keys = counts.keys()
-    values = counts.values()
+def plot_distribution(prob_data, th):
+    """Visualize the distribution of predicted values. Y-axis=occurance, X-axis=Predicted probability"""
+    vals = [int(v * 1000) for v in prob_data]               # multiply the prob value by 1000, and just get rid of sig-digits
+    counts_prob = Counter(vals)                             # {468:3,  609:5, 549:10, ...}
     c = np.zeros(1000)
-    for key, value in counts.items():
-        c[key] = value
+    for key, value in counts_prob.items():
+        c[key] = value                                      # c will be zero every-where, except those places that we got some int(prob*1000)
 
     fig = plt.figure(figsize=(6, 6))
     plt.plot(c, label='predictions')
@@ -41,11 +39,13 @@ def plot_distribution(data, th):
     fig.suptitle('Distribution of predictions')
     plt.axvline(x=th * 1000, color='red', label='threshold')
     plt.legend(['predictions', 'threshold'])
-    locs, labels = plt.xticks()  # Get the current locations and labels.
+    locs, labels = plt.xticks()                             # Get the current locations and labels.
     stp = 1 / (len(locs) - 2)
-    lbls = [x / 1000 for x in locs]
+    lbls = [x / 1000 for x in locs]                         # Since we multiplied the prob by 1000, to get the real values, we divide by 1000
 
     plt.xticks(ticks=locs[1:len(locs) - 1], labels=lbls[1:len(lbls) - 1])
+    plt.xlabel(r'$Y_{pred-prob}$')
+    plt.ylabel('Occurance')
     plt.savefig("./figures/plots/"+"distribution.png")
 
 
@@ -58,10 +58,10 @@ def plot_confusion(tp,tn,fp,fn):
     labels = (np.asarray(["{0}: {1}".format(string, value)   for string, value in zip(strings.flatten(),  results.flatten())]) ).reshape(2, 2)
     fig = plt.figure(figsize = (7,6))
     sn.set(font_scale=2)
-    sn.heatmap(df_cm, annot=labels, fmt="", cmap="YlGn", xticklabels=False, yticklabels=False)
+    sn.heatmap(df_cm, annot=labels, fmt="", cmap="rainbow", xticklabels=False, yticklabels=False, cbar=False)
     fig.suptitle('Confusion matrix')
-    plt.xlabel("Predictions")
-    plt.ylabel("Actual labels")
+    plt.xlabel(r'$Y_{pred}$')
+    plt.ylabel(r'$Y_{label}$')
     plt.savefig("./figures/plots/" + "confusion.png")
 
 
@@ -69,13 +69,15 @@ def plot_confusion(tp,tn,fp,fn):
 def plot_roc(gt_labels, probas):
     """Show Matthews correlation coefficient (MCC curve"""
     fpr, tpr, threshold = metrics.roc_curve(gt_labels, probas)
-    fig=plt.figure(figsize = (6,6))
-    plt.plot(fpr, tpr)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.plot(fpr, tpr)
     fig.suptitle('ROC')
-    plt.xlabel('False positive rate')
-    plt.ylabel('True positive rate')
-    plt.tight_layout(pad=0.5)
-    plt.savefig("./figures/plots/" + "roc.png")
+    fig.set_facecolor('white')
+    ax.set_facecolor('lightblue')
+    ax.set_xlabel('False positive rate')
+    ax.set_ylabel('True positive rate')
+    fig.tight_layout(pad=0.5)
+    fig.savefig("./figures/plots/" + "roc.png")
 
 
 
@@ -97,23 +99,29 @@ def get_loss(path):
         avg = float(line[-1])
   rates = [x.get('learning_rate') for x in data]
   losses = [x.get('loss') for x in data]
-  steps = [x.get('step') for x in data]
-  return steps, losses, avg
+  epochs = [x.get('step') for x in data]
+  return epochs, losses, avg
 
 
 
 def plot_loss(path):
     """Visualize the model performation bu showing the loss values during the training"""
-    steps, losses, avg = get_loss(path)
-    fig=plt.figure(figsize=(6, 6))
-    plt.plot(steps, losses, label='training loss')
-    plt.axhline(y=avg, color='red', label='avg loss')
-    plt.legend(['training loss', f'avg loss {avg:.4f}'])
-    plt.xlabel("Steps")
+    epochs, losses, avg = get_loss(path)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.plot(epochs, losses, label='training loss')
+    if avg > 0:
+        ax.axhline(y=avg, color='red', label='avg loss')
+        legend = ['training loss', f'avg loss {avg:.4f}']
+    else:
+        legend = ['training loss']    
+    ax.legend(legend)
+    ax.set_xlabel("Epochs")
     fig.suptitle(f'Loss')
-    plt.tight_layout(pad=0.5)
-    plt.savefig("./figures/plots/" + "loss.png")
-    #plt.plot(steps, rates)
+    fig.set_facecolor('white')
+    ax.set_facecolor('lightblue')
+    fig.tight_layout(pad=0.5)
+    fig.savefig("./figures/plots/" + "loss.png")
+    #fig.plot(epochs, rates)
 
 
 

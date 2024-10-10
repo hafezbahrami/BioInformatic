@@ -20,8 +20,9 @@ file_dir = path.dirname(path.abspath(__file__))
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
     reduced_version_of_data = False                                                     # For ddebug purpose, we want to use smaller dataset
-    num_train_epochs = 10
-    logging_steps = 1000
+    num_train_epochs = 10 #10
+    save_steps = 60000 # 60000
+    logging_steps = 1000 #1000
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
         num_train_epochs = 1
@@ -70,7 +71,7 @@ def train():
                                                         "--hidden_dropout_prob", str(0.1),
                                                         "--warmup_percent", str(0.06),
                                                         "--logging_steps", str(logging_steps),
-                                                        "--save_steps", str(60000),
+                                                        "--save_steps", str(save_steps),
                                                         "--overwrite_output",])
     print(resultTrain)
 

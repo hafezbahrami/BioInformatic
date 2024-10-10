@@ -622,7 +622,7 @@ def visualize(args, model, tokenizer, kmer, prefix=""):
             model = torch.nn.DataParallel(model)
 
         # Eval!
-        logger.info("***** Running prediction {} *****".format(prefix))
+        logger.info("\n\n***** Running prediction {} *****".format(prefix))
         logger.info("  Num examples = %d", len(pred_dataset))
         logger.info("  Batch size = %d", args.pred_batch_size)
         pred_loss = 0.0
@@ -1131,7 +1131,7 @@ def main():
 
     # ---------------------------------------------------------------------------------------------------------------
     # ---------------------------------------------------------------------------------------------------------------
-    # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
+    # Saving best-practices and Reload best model for prediction: if you use defaults names for the model, you can reload it using from_pretrained()
     # ---------------------------------------------------------------------------------------------------------------
     # ---------------------------------------------------------------------------------------------------------------
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0) and args.task_name != "dna690":
@@ -1198,9 +1198,9 @@ def main():
     if args.do_predict and args.local_rank in [-1, 0]:
         tokenizer = tokenizer_class.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case)
         checkpoint = args.output_dir
-        logger.info(f"Predict using the following checkpoint: {checkpoint}")
+        logger.info(f"\n\nPredict using the following checkpoint: {checkpoint}")
         prefix = ''
-        model = model_class.from_pretrained(checkpoint)
+        model = model_class.from_pretrained(checkpoint)                             # Load the *.bin model, a binary model, saved in the training epoch (last trained model)
         model.to(args.device)
         prediction = predict(args, model, tokenizer, prefix=prefix)
 
@@ -1229,16 +1229,16 @@ def main():
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
             checkpoint = output_dir
-            logger.info("Calculate attention score using the following checkpoint: %s", checkpoint)
+            logger.info("\n\nCalculate attention score using the following checkpoint: %s", checkpoint)
             prefix = checkpoint.split("/")[-1] if checkpoint.find("checkpoint") != -1 else ""
-            config = config_class.from_pretrained(
+            config = config_class.from_pretrained( 
                 output_dir,
                 num_labels=num_labels,
                 finetuning_task=args.task_name,
                 cache_dir=args.cache_dir if args.cache_dir else None,
             )
             config.output_attentions = True
-            model = model_class.from_pretrained(
+            model = model_class.from_pretrained(                                                            # Load the *.bin model, a binary model, saved in the training epoch (last trained model)
                 checkpoint,
                 from_tf=bool(".ckpt" in args.model_name_or_path),
                 config=config,
