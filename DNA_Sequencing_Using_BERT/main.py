@@ -19,10 +19,11 @@ file_dir = path.dirname(path.abspath(__file__))
 
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
-    reduced_version_of_data = False                                                     # For ddebug purpose, we want to use smaller dataset
-    num_train_epochs = 10 #10
-    save_steps = 60000 # 60000
-    logging_steps = 1000 #1000
+    reduced_version_of_data = False                                                      # For ddebug purpose, we want to use smaller dataset
+    num_train_epochs = 10                                                               # 10
+    save_steps = 60000                                                                  # 60000
+    logging_steps = 1000                                                                # 1000
+    genome_special_direction = "forward"                                                # "none", "forward", "reverse"
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
         num_train_epochs = 1
@@ -30,8 +31,8 @@ def train():
     else:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
     preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
-                                train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
-                                    genome_name="ecoli")
+                                                    train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
+                                                    genome_name="ecoli", genome_special_direction=genome_special_direction)
     _, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
 
     # (2) Load a pretrained-DNA-BERT model

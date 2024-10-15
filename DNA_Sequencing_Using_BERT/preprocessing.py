@@ -95,7 +95,8 @@ def _helper_statistics(data, dataset_type="train"):
 
 class PreProcessData():
     def __init__(self, genome, gt_gen_seq_coor, train_fraction=0.7, windows=[75], k_mer_val=3,
-                genome_name="ecoli"):
+                genome_name="ecoli", genome_special_direction="none"):
+        self.genome_special_direction = genome_special_direction                        # "none": we collect data in both forward/backward direction  &&&  "forward": we collect data in forward direction  &&&  "backward": we collect data in backward direction
         self.train_fraction: float = train_fraction
         self.windows = windows
         self.k_mer_val = k_mer_val
@@ -110,13 +111,32 @@ class PreProcessData():
         """
         Assigns labels (Y_lab) according to the gene coordinates (start and end index of ground-truth genome)
         """
-        gene_coordinates = [(int(c[0]), int(c[1])) for c in self.gt_gen_seq_coor]   # gene_coordinates=[(3, 8), (11, 15), (14, 19), ....]
-        genome_len =len(self.genome)                                                # genome_len=4,641,652
+        # gene_coordinates = [(int(c[0]), int(c[1])) for c in self.gt_gen_seq_coor]     # gene_coordinates=[(3, 8), (11, 15), (14, 19), ....]
+        idx_start = 0
+        genome_modified = ""
+        gene_coordinates=[]
+        for c in self.gt_gen_seq_coor:
+            idx0, idx1 = int(c[0])-1, int(c[1])-1
+            idx_min, idx_max = min(idx0, idx1), max(idx0, idx1)                         # to cover notation for both forward and backward gene
+            genome_modified += self.genome[idx_start: idx_min]                          # Adding the non-coding part
+            if self.genome_special_direction == "none":
+                genome_modified += self.genome[idx_min: idx_max+1]                      # Adding the coding part (in both forward and backward directions)
+                gene_coordinates.append((idx0+1, idx1+1))                               # start index in gene_coordinate is 1
+            if c[2] == self.genome_special_direction:
+                genome_modified += self.genome[idx_min: idx_max+1]                      # Adding the coding part (only in either forward or backward direction)
+                gene_coordinates.append((idx0+1, idx1+1))                               # start index in gene_coordinate is 1
+            idx_start = idx_max+1
+        self.genome = genome_modified    
+
+        genome_len =len(self.genome)                                                    # genome_len=4,641,652
         Y_lab = np.zeros(genome_len, dtype=int)
         for i, c in enumerate(gene_coordinates):
-            Y_lab[c[0]-1 :c[1]] = 1                                                 # Set all gene labels to 1, between the start_idx (c[0]) till end_idx (c[1])
+            Y_lab[c[0]-1 :c[1]] = 1                                                     # Set all gene labels to 1, between the start_idx (c[0]) till end_idx (c[1])
         c = Counter(Y_lab)
-        print(f'\nZeros-label fraction of the total Y_lab: {c[0] / (c[0] + c[1]):.4f}')
+        if self.genome_special_direction != "none":
+            print(f"\n\nOnly {self.genome_special_direction} section of genome data is beging used, to balance 0/1 lables!")
+        print(f'Zeros-label fraction of the total Y_lab: {c[0] / (c[0] + c[1]):.4f}')
+
         return Y_lab
 
     def _get_train_test_genome_and_label(self):
