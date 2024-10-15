@@ -15,15 +15,19 @@ train_fraction = 0.7
 fine_tune_DANABERT_using_pretrained_model = True
 debug_flag = preprocessing.debug_flag
 
+reduced_version_of_data = False                                                      # For ddebug purpose, we want to use smaller dataset
+genome_special_direction = "forward"                                                # "none", "forward", "reverse"
+
+save_steps = 60000                                                                  # 60000
+logging_steps = 1000                                                                # 1000
+
+num_train_epochs = 10                                                               # 10
+lr = 1.0e-8
+
 file_dir = path.dirname(path.abspath(__file__))
 
 def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
-    reduced_version_of_data = False                                                      # For ddebug purpose, we want to use smaller dataset
-    num_train_epochs = 10                                                               # 10
-    save_steps = 60000                                                                  # 60000
-    logging_steps = 1000                                                                # 1000
-    genome_special_direction = "forward"                                                # "none", "forward", "reverse"
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
         num_train_epochs = 1
@@ -67,7 +71,7 @@ def train():
                                                         "--n_process", str(8),  
                                                         "--per_gpu_train_batch_size", str(16),
                                                         "--per_gpu_eval_batch_size", str(16),
-                                                        "--learning_rate", str(1e-6),
+                                                        "--learning_rate", str(lr),
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
                                                         "--warmup_percent", str(0.06),
