@@ -89,9 +89,9 @@ def _helper_statistics(data, dataset_type="train"):
     for data_point in data:
         if data_point[-2] =="0": count_label_0 += 1
         if data_point[-2] =="1": count_label_1 += 1
-    print(f"number of data-points labeled 1: {count_label_1}")
     print(f"number of data-points labeled 0: {count_label_0}")
-    print(f"Ratio label0 / label1: {(count_label_0/count_label_1)*100.:.1f}%")
+    print(f"number of data-points labeled 1: {count_label_1}")
+    print(f"Ratio label0 / total-label: {(count_label_0/(count_label_0 + count_label_1))*100.:.1f}%")
 
 class PreProcessData():
     def __init__(self, genome, gt_gen_seq_coor, train_fraction=0.7, windows=[75], k_mer_val=3,
