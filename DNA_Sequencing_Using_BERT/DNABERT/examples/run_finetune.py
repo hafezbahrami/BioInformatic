@@ -264,7 +264,8 @@ def train(args, train_dataset, model, tokenizer):
     best_auc = 0
     last_auc = 0
     stop_count = 0
-    
+    logs = {}
+
     for epoch_num in train_iterator:
         logger.info(f"------ Training Epoch {epoch_num+1} ------")
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
@@ -379,9 +380,10 @@ def train(args, train_dataset, model, tokenizer):
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
-        logger.info("\n")
-        logger.info(json.dumps({**logs, **{"step": global_step}}))
-        logger.info("\n")
+        if logs:
+            logger.info("\n")
+            logger.info(json.dumps({**logs, **{"step": global_step}}))
+            logger.info("\n")
 
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
