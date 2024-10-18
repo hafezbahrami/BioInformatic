@@ -18,6 +18,7 @@ def train():
     fine_tune_DANABERT_using_pretrained_model = True
     debug_flag = preprocessing.debug_flag
     delete_cash_files = True
+    load_nodel_from_chk_points = True
 
     reduced_version_of_data = False                                                      # For ddebug purpose, we want to use smaller dataset
     genome_special_direction = "forward"                                                # "none", "forward", "reverse"
@@ -25,8 +26,9 @@ def train():
     save_steps = 60000                                                                  # 60000
     logging_steps = 1000                                                                # 1000
 
-    num_train_epochs = 10                                                               # 10
-    lr = 1.0e-8
+    num_train_epochs = 20                                                               # 10
+    lr = 1.0e-6
+    min_lr = 1e-8
     # ---------------------------------------------------------------------------------------------
     # (0) remove all cach files
     def delete_all_cash_files_recursively(directory):
@@ -58,8 +60,6 @@ def train():
     # (1) creating the datasets (write the train.tsv and dev.tsv in local disk)
     if reduced_version_of_data:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
-        num_train_epochs = 1
-        logging_steps = 1
     else:
         ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
     preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
@@ -72,7 +72,7 @@ def train():
     if not path.isdir(file_dir + "/DNABERT"):
         raise Exception("DNABERT must be git-cloned locally. Please read the readme.md. After cloning, the function below should be run to make the required changes. DNABERT must then be installed (as editable package).")
     helper.minor_version_changes_in_DNABERT()
-    helper.setting_env_variables_for_DNABERT(kmer_val)
+    helper.setting_env_variables_for_DNABERT(kmer_val, load_nodel_from_chk_points=load_nodel_from_chk_points)
 
     # (3) TRAIN: Running fin-tunning in DNABERT: run the main() function in the DNABERT package
     TOKENIZER_NAME = os.environ.get("TOKENIZER_NAME")
@@ -100,6 +100,7 @@ def train():
                                                         "--per_gpu_train_batch_size", str(16),
                                                         "--per_gpu_eval_batch_size", str(16),
                                                         "--learning_rate", str(lr),
+                                                        "--min_learning_rate", str(min_lr),
                                                         "--weight_decay", str(0.01),
                                                         "--hidden_dropout_prob", str(0.1),
                                                         "--warmup_percent", str(0.06),

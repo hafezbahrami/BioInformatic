@@ -245,8 +245,10 @@ def train(args, train_dataset, model, tokenizer):
 
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
+
+    end_epoch = epochs_trained + int(args.num_train_epochs) if epochs_trained >= int(args.num_train_epochs) else int(args.num_train_epochs) # IN case we are loading a saved model from chk_points, we want to start from where we left off
     train_iterator = trange(
-        epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0],
+        epochs_trained, end_epoch, desc="Epoch", disable=args.local_rank not in [-1, 0],
     )
     set_seed(args)  # Added here for reproductibility
 
@@ -338,14 +340,13 @@ def train(args, train_dataset, model, tokenizer):
                             logs[eval_key] = value
 
                     loss_scalar = (tr_loss - logging_loss) / args.logging_steps
-                    learning_rate_scalar = scheduler.get_lr()[0]
+                    learning_rate_scalar = max(args.min_learning_rate,  scheduler.get_lr()[0])
                     logs["learning_rate"] = learning_rate_scalar
                     logs["loss"] = loss_scalar
                     logging_loss = tr_loss
 
                     for key, value in logs.items():
                         tb_writer.add_scalar(key, value, global_step)
-                    print(json.dumps({**logs, **{"step": global_step}}))
 
                     with open(output_dir_loss, "a") as loss_writer:
                         json.dump({**logs, **{"step": global_step}}, loss_writer)
@@ -378,6 +379,10 @@ def train(args, train_dataset, model, tokenizer):
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
+        logger.info("\n")
+        logger.info(json.dumps({**logs, **{"step": global_step}}))
+        logger.info("\n")
+
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
@@ -939,6 +944,7 @@ def main():
         help="Number of updates steps to accumulate before performing a backward/update pass.",
     )
     parser.add_argument("--learning_rate", default=5e-5, type=float, help="The initial learning rate for Adam.")
+    parser.add_argument("--min_learning_rate", default=1e-8, type=float, help="The learning rate does not goe below this value.")
     parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight decay if we apply some.")
     parser.add_argument("--adam_epsilon", default=1e-8, type=float, help="Epsilon for Adam optimizer.")
     parser.add_argument("--beta1", default=0.9, type=float, help="Beta1 for Adam optimizer.")

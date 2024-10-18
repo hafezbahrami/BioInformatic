@@ -2,7 +2,7 @@ import os
 from os import path
 import gdown
 import zipfile
-
+import re
 import preprocessing
 
 debug_flag = preprocessing.debug_flag
@@ -62,12 +62,41 @@ def minor_version_changes_in_DNABERT():
     replace(file_path, text, subs)
 
 
-def setting_env_variables_for_DNABERT(kmer_val):
+def _find_largest_numbered_folder(folder_path):
+    # Regular expression to match folder names that end with a number
+    pattern = re.compile(r'(\d+)$')
+
+    largest_number = -1
+    largest_folder = None
+
+    # Iterate over all items in the directory
+    for folder_name in os.listdir(folder_path):
+        # Check if the item is a folder
+        full_path = os.path.join(folder_path, folder_name)
+        if os.path.isdir(full_path):
+            # Use regex to search for a number at the end of the folder name
+            match = pattern.search(folder_name)
+            if match:
+                folder_number = int(match.group(0))  # Extract the number
+                # Update if we find a larger number
+                if folder_number > largest_number:
+                    largest_number = folder_number
+                    largest_folder = folder_name
+    return folder_path + largest_folder + "/"
+
+def setting_env_variables_for_DNABERT(kmer_val, load_nodel_from_chk_points=False):
     """Setting some enviroment variable"""
     os.environ['KMER'] = str(kmer_val)
     k = os.getenv("KMER")
     os.environ["TOKENIZER_NAME"] = f"dna{k}"
+
     os.environ['MODEL_PATH'] = current_path + f"pretrained_DNA/{k}-new-12w-0/"
+    if load_nodel_from_chk_points:
+        folder_look_up = current_path + f"output/{k}/"
+        largest_chk_point_folder = _find_largest_numbered_folder(folder_look_up)
+        if largest_chk_point_folder:
+            os.environ['MODEL_PATH'] = largest_chk_point_folder
+    
     os.environ['DATA_PATH'] = current_path + f"ecoli_data/{k}/method1/75/"
     os.environ['OUTPUT_PATH'] = current_path + f"output/{k}/"
     os.environ['PREDICTION_PATH'] = current_path + f"prediction/{k}/"
