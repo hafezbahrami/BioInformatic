@@ -19,6 +19,7 @@ def train():
     debug_flag = preprocessing.debug_flag
     delete_cash_files = True
     load_nodel_from_chk_points = True
+    should_start_from_epoch_0 = True                                                    # when starting fomr a saved mode, should we start from epoch 0, or from where we left off
 
     reduced_version_of_data = False                                                      # For ddebug purpose, we want to use smaller dataset
     genome_special_direction = "forward"                                                # "none", "forward", "reverse"
@@ -95,6 +96,7 @@ def train():
 
                                                         "--do_train", 
                                                         "--num_train_epochs", str(num_train_epochs),
+                                                        "--should_start_from_epoch_0", str(should_start_from_epoch_0),
 
                                                         "--n_process", str(8),  
                                                         "--per_gpu_train_batch_size", str(16),

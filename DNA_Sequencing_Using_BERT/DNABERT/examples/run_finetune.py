@@ -196,7 +196,8 @@ def train(args, train_dataset, model, tokenizer):
     ):
         # Load in optimizer and scheduler states
         optimizer.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "optimizer.pt")))
-        scheduler.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "scheduler.pt")))
+        if not args.should_start_from_epoch_0:
+            scheduler.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "scheduler.pt")))
 
     if args.fp16:
         try:
@@ -231,10 +232,14 @@ def train(args, train_dataset, model, tokenizer):
     # Check if continuing training from a checkpoint
     if os.path.exists(args.model_name_or_path):
         # set global_step to gobal_step of last saved checkpoint from model path
-        try:
-            global_step = int(args.model_name_or_path.split("-")[-1].split("/")[0])
-        except:
+        if args.should_start_from_epoch_0:
             global_step = 0
+        else:
+            try:
+                global_step = int(args.model_name_or_path.split("-")[-1].split("/")[0])
+            except:
+                global_step = 0
+
         epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
         steps_trained_in_current_epoch = global_step % (len(train_dataloader) // args.gradient_accumulation_steps)
 
@@ -960,6 +965,11 @@ def main():
     parser.add_argument("--rnn_hidden", default=768, type=int, help="Number of hidden unit in a rnn layer.")
     parser.add_argument(
         "--num_train_epochs", default=3.0, type=float, help="Total number of training epochs to perform.",
+    )
+    parser.add_argument(
+        "--should_start_from_epoch_0",
+        choices=['True', 'False'], default='True',
+        help="If we are loading from a saved, trained, model, should we start the epoch number form 0?",
     )
     parser.add_argument(
         "--max_steps",
