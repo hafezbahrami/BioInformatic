@@ -30,7 +30,7 @@ def plot_distribution(prob_data, th):
     """Visualize the distribution of predicted values. Y-axis=occurance, X-axis=Predicted probability"""
     vals = [int(v * 1000) for v in prob_data]               # multiply the prob value by 1000, and just get rid of sig-digits
     counts_prob = Counter(vals)                             # {468:3,  609:5, 549:10, ...}
-    c = np.zeros(1000)
+    c = np.zeros(1000+1)
     for key, value in counts_prob.items():
         c[key] = value                                      # c will be zero every-where, except those places that we got some int(prob*1000)
 
@@ -213,15 +213,42 @@ def evaluate(datapath, losspath, seq_len, gt_labels, img_name, threshold=0.5):
 
 if __name__ == "__main__":
     import os
+    use_real_data = True
     current_file_directory = os.path.dirname(os.path.abspath(__file__))
     pred_prob_file_loc = cc = os.path.join(current_file_directory , "prediction/6/pred_results.npy")
     loss_file_loc = cc = os.path.join(current_file_directory , "output/6/loss.txt")
+    
+    if use_real_data:
+        import preprocessing
+        kmer_val = 6
+        window_size = 75
+        train_fraction = 0.7
+        reduced_version_of_data = False
+        genome_special_direction = "forward" 
+        if reduced_version_of_data:
+            ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")
+        else:
+            ecoli_genome, gt_gen_seq_coor, _, _ = preprocessing._get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")
+        preProcessObj4 = preprocessing.PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
+                                                        train_fraction=train_fraction, windows=[window_size], k_mer_val=kmer_val,
+                                                        genome_name="ecoli", genome_special_direction=genome_special_direction)
+        _, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
 
-    genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(1392496)]
-    gt_labels = np.array(genome_label_test)
+        if kmer_val != 6 or window_size != 75:
+            raise Exception("Below code is temporariy and when kmer=6 and window_size=75")
+        genome_label_test = []
+        for line in k_mer_seq_test_X_and_Y_lab_dict["test_6_labels_75"]:
+            for _ in range(window_size):
+                if line[-2].isdigit():
+                    genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method
+        gt_labels_test = np.array(genome_label_test)
+    else:
+        data = np.load(pred_prob_file_loc)
+        len_pred = len(data)
 
-    xx= np.load(pred_prob_file_loc)
+        genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(len_pred)]
+        gt_labels_test = np.array(genome_label_test)
 
     evaluate(datapath=pred_prob_file_loc, losspath=loss_file_loc, seq_len=75,
-            gt_labels=gt_labels, img_name="all_res_together.png", threshold=0.5)
+            gt_labels=gt_labels_test, img_name="all_res_together.png", threshold=0.5)
     
