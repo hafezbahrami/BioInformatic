@@ -112,21 +112,14 @@ class PreProcessData():
         Assigns labels (Y_lab) according to the gene coordinates (start and end index of ground-truth genome)
         """
         # gene_coordinates = [(int(c[0]), int(c[1])) for c in self.gt_gen_seq_coor]     # gene_coordinates=[(3, 8), (11, 15), (14, 19), ....]
-        idx_start = 0
-        genome_modified = ""
         gene_coordinates=[]
         for c in self.gt_gen_seq_coor:
             idx0, idx1 = int(c[0])-1, int(c[1])-1
-            idx_min, idx_max = min(idx0, idx1), max(idx0, idx1)                         # to cover notation for both forward and backward gene
-            genome_modified += self.genome[idx_start: idx_min]                          # Adding the non-coding part
             if self.genome_special_direction == "none":
-                genome_modified += self.genome[idx_min: idx_max+1]                      # Adding the coding part (in both forward and backward directions)
                 gene_coordinates.append((idx0+1, idx1+1))                               # start index in gene_coordinate is 1
-            if c[2] == self.genome_special_direction:
-                genome_modified += self.genome[idx_min: idx_max+1]                      # Adding the coding part (only in either forward or backward direction)
+
+            if len(c) > 2 and c[2] == self.genome_special_direction:
                 gene_coordinates.append((idx0+1, idx1+1))                               # start index in gene_coordinate is 1
-            idx_start = idx_max+1
-        self.genome = genome_modified    
 
         genome_len =len(self.genome)                                                    # genome_len=4,641,652
         Y_lab = np.zeros(genome_len, dtype=int)
@@ -177,7 +170,8 @@ class PreProcessData():
             if extra_elem > 0: arr=arr[: -extra_elem]
             n_chunks = len(arr) // max_l                # Calculate how many equal sections of length 'l' can be created
             chunks = np.array_split(arr, n_chunks)      # Split the array into equal chunks
-            final_arrs = [chunk for chunk in chunks if len(chunk) == max_l]  # Filter out chunks with fewer than 'l' elements
+            final_arrs = [[chunk, 0] for chunk in chunks if len(chunk) == max_l]  # Filter out chunks with fewer than 'l' elements
+            final_arrs[-1][1] = extra_elem
             return final_arrs
 
         temp_arrs = []
@@ -187,7 +181,7 @@ class PreProcessData():
                 for arr in arrs:
                     temp_arrs.append(arr)
             else:
-                temp_arrs.append(Y_lab)
+                temp_arrs.append([Y_lab, 0])
         return temp_arrs
 
 
@@ -217,14 +211,15 @@ class PreProcessData():
         idx_0_1_intechange = np.where(np.diff(Y_lab_s[:]))[0]                   # idx_0_1_intechange=[188, 254, 335, ..., 3248437, 3248821, 3248967]  --> idx_0_1_intechange is a list of indices where label 0 turn into 1 or vice versa
         Y_lab_s = np.split(Y_lab_s, idx_0_1_intechange+1)                       # Y_lab_s[0]=[00....000],       Y_lab_s[1]=[111....111],        Y_lab_s[2]=[000...000],       Y_lab_s[3]=[111....111]
         # Making sure all Y_lab_s have length smaller than seq_len (window length)
-        Y_lab_s = self._helper_limit_the_array_with_length(Y_lab_s=Y_lab_s, seq_len=seq_len)
+        Y_lab_s_and_cut_off_idx = self._helper_limit_the_array_with_length(Y_lab_s=Y_lab_s, seq_len=seq_len)
 
         k_mer_seqs = []
         zeros = 0
         idx = 0
-        for l in Y_lab_s:
+        prev_cut_off = 0 # how much of previous genome is cut off (length beyind the window length)
+        for l, cutt_off_idx in Y_lab_s_and_cut_off_idx:
             l_len = len(l)
-            idx += l_len
+            idx += (l_len + prev_cut_off)
             # Sequences shorter than k are left out (tokenizer does not have tokens for them)
             if l_len >= self.k_mer_val:
                 g = self.genome_X_train[idx-l_len: idx]                         # g --> genome_X_train_cut
@@ -237,6 +232,7 @@ class PreProcessData():
                         zeros += 1
                     line = (f"{k_mer_seq}\t{label}\n")
                     if len(k_mer_seq) > 0: k_mer_seqs.append(line)              # only add to this to dataset, when there is k_mer
+            prev_cut_off = cutt_off_idx
         print(f'Number of {zeros} Y_lab=0 out of total {len(k_mer_seqs)} train k_mer_seq: Nearly ~ {zeros / len(k_mer_seqs)}')
         return k_mer_seqs
 
@@ -344,7 +340,7 @@ class PreProcessData():
 
 if __name__ == "__main__":
     # -----------------------------------------------------------------------------------
-    # Test1
+    # Test 1
     # testing making k_mer's representations for the nucleotide sequence
     fake_genome='ATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGACC'
     fake_gt_gen_seq_coor = [(3, 8), (11, 15), (14, 19)]                     # Let's assume in this genome, we have 3 Genes (3 coding sections)
@@ -352,28 +348,109 @@ if __name__ == "__main__":
                                     train_fraction=1.0, windows=[75], k_mer_val=6,
                                     genome_name="fake_ecoli")
     k_mer_ed_represntation = preProcessObj1._make_kmers(data=fake_genome)   # k_mer='ATGAAA TGAAAC GAAACG AAACGC AACGCA ACGCAT CGCATT  .......'
+    assert k_mer_ed_represntation[:100] == 'ATGAAA TGAAAC GAAACG AAACGC AACGCA ACGCAT CGCATT GCATTA CATTAG ATTAGC TTAGCA TAGCAC AGCACC GCACCA CA'
+    assert len(k_mer_ed_represntation) == 440
 
-    # Test2: Labeling task: Those nodes/letters in below ecoli_genome gets label as 1 for indices between (3, 8), (11, 15), (14, 19)
+
+    # Test 2: Labeling task: Those nodes/letters in below ecoli_genome gets label as 1 for indices between (3, 8), (11, 15), (14, 19)
     fake_genome = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     fake_gt_seq_data_ordered = [(3, 8), (11, 15), (14, 19)]                 # ordered based on start index --> 3 < 11 < 14
     preProcessObj2 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
                                     train_fraction=1.0, windows=[75], k_mer_val=6,
                                     genome_name="fake_ecoli")
     fake_labels = preProcessObj2._label_genome()                            # fake_labels=[0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+    label = [0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+    assert all(fake_labels[i] == label[i] for i in range(len(fake_labels))) 
 
-    # Test3: Example in page 4 on my hand-note
+
+    # Test 3: Example in page 4 on my hand-note
     fake_genome = 'TACGCTTGAGCCTAGGGACC'
     fake_gt_seq_data_ordered = [(1, 4), (8, 16)]                            # ordered based on start index --> 1 < 10
     preProcessObj3 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
                                     train_fraction=0.7, windows=[5], k_mer_val=3,
                                     genome_name="my_hand_note_fake_ecoli")
     k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj3.make_datasets()    
-    
-    # Test 4: test w/ real raw data for genome and the gene sequences
-    ecoli_genome, gt_gen_seq_coor, _, _ = _get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3.txt", gt_dir="./Gene_sequence.txt")    # ecoli_genome="AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAG.........."
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][1] == 'TAC ACG\t1\n'
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][2] == 'CTT\t0\n'
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][3] == 'GAG AGC GCC\t1\n'
+
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_5"][1] == 'GGG GGA GAC\t0\n'
+
+
+
+    # Test 4: Example in page 4 on my hand-note, but only "forward" direction is considered as gene
+    fake_genome = 'TACGCTTGAGCCTAGGGACC'
+    fake_gt_seq_data_ordered = [(1, 4, "forward"), (8, 16, "reverse")]                            # ordered based on start index --> 1 < 10
+    preProcessObj4 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                    train_fraction=0.7, windows=[5], k_mer_val=3,
+                                    genome_name="my_hand_note_fake_ecoli", genome_special_direction="forward")
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()    
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][1] == 'TAC ACG\t1\n'
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][2] == 'CTT TTG TGA\t0\n'
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][3] == 'GCC CCT CTA\t0\n'
+
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_5"][1] == 'GGG GGA GAC\t0\n'
+
+
+
+    # Test 5: Example in page 4 on my hand-note, but only "forward" direction is considered as gene
+    fake_genome = 'TACGCTTGAGCCTAGGGACC'
+    fake_gt_seq_data_ordered = [(1, 4, "forward"), (8, 16, "reverse")]                            # ordered based on start index --> 1 < 10
+    preProcessObj5 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                    train_fraction=0.7, windows=[5], k_mer_val=3,
+                                    genome_name="my_hand_note_fake_ecoli", genome_special_direction="reverse")
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj5.make_datasets()    
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][1] == 'GAG AGC GCC\t1\n'
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_5"][2] == 'TAC ACG CGC\t0\n'
+
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_5"][1] == 'GGG GGA GAC\t0\n'
+
+
+
+    # Test 6: 
+    fake_genome = 'TACGCTTGAGCCTAGATACTGTACCGAGAT'
+    fake_gt_seq_data_ordered = [(4, 8, "forward"), (12, 17, "reverse"), (25, 28, "forward")]                            # ordered based on start index --> 1 < 10
+    preProcessObj6 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                    train_fraction=0.7, windows=[4], k_mer_val=3,
+                                    genome_name="my_hand_note_fake_ecoli", genome_special_direction="none")
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj6.make_datasets()    
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_4"] == ['sequence label\n', 'GCT CTT\t1\n', 'CTA TAG\t1\n', 'ACT CTG\t0\n', 'TAC\t0\n', 'AGC\t0\n']
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_4"] == ['sequence label\n', 'TAC ACC\t0\n', 'GAG AGA\t1\n']  
+
+
+
+
+    # Test 7: only forward part of genome
+    fake_genome = 'TACGCTTGAGCCTAGATACTGTACCGAGAT'
+    fake_gt_seq_data_ordered = [(4, 8, "forward"), (12, 17, "reverse"), (25, 28, "forward")]                            # ordered based on start index --> 1 < 10
+    preProcessObj7 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                    train_fraction=0.7, windows=[4], k_mer_val=3,
+                                    genome_name="my_hand_note_fake_ecoli", genome_special_direction="forward")
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj7.make_datasets()    
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_4"] == ['sequence label\n', 'GCT CTT\t1\n', 'TAG AGA\t0\n', 'TAC ACT\t0\n', 'TAC\t0\n', 'AGC GCC\t0\n']
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_4"] == ['sequence label\n', 'TAC ACC\t0\n', 'GAG AGA\t1\n']  
+
+
+
+
+    # Test 8: only reverse part of genome
+    fake_genome = 'TACGCTTGAGCCTAGATACTGTACCGAGAT'
+    fake_gt_seq_data_ordered = [(4, 8, "forward"), (12, 17, "reverse"), (25, 28, "forward")]                            # ordered based on start index --> 1 < 10
+    preProcessObj8 = PreProcessData(genome=fake_genome, gt_gen_seq_coor=fake_gt_seq_data_ordered,
+                                    train_fraction=0.7, windows=[4], k_mer_val=3,
+                                    genome_name="my_hand_note_fake_ecoli", genome_special_direction="reverse")
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj8.make_datasets()    
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_3_labels_4"] == ['sequence label\n', 'ACT CTG\t0\n', 'TAC ACG\t0\n', 'CTT TTG\t0\n', 'CTA TAG\t1\n']
+    assert k_mer_seq_test_X_and_Y_lab_dict["test_3_labels_4"] == ['sequence label\n', 'TAC ACC\t0\n', 'GAG AGA\t0\n'] 
+
+
+
+
+    # Test 9: test w/ real raw data for genome and the gene sequences
+    ecoli_genome, gt_gen_seq_coor, _, _ = _get_data(genome_seq_dir="./E_coli_K12_MG1655_U00096.3_REDUCED.txt", gt_dir="./Gene_sequence_REDUCED.txt")    # ecoli_genome="AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAG.........."
                                                                                                                                         # len(gt_gen_seq_coor)=4,726 genes (coding sections)
-    preProcessObj4 = PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
+    preProcessObj9 = PreProcessData(genome=ecoli_genome, gt_gen_seq_coor=gt_gen_seq_coor,
                                     train_fraction=0.7, windows=[75], k_mer_val=6,
                                     genome_name="ecoli")
-    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj4.make_datasets()
-    zz=1
+    k_mer_seq_train_X_and_Y_lab_dict, k_mer_seq_test_X_and_Y_lab_dict = preProcessObj9.make_datasets()
+    assert k_mer_seq_train_X_and_Y_lab_dict["train_6_labels_75"][1] == 'AATCTA ATCTAT TCTATT CTATTC TATTCA ATTCAT TTCATT TCATTA CATTAT ATTATC TTATCT TATCTC ATCTCA TCTCAA CTCAAT TCAATC CAATCA AATCAG ATCAGG TCAGGC CAGGCC AGGCCG GGCCGG GCCGGG CCGGGT CGGGTT GGGTTT GGTTTG GTTTGC TTTGCT TTGCTT TGCTTT GCTTTT CTTTTA TTTTAT TTTATG TTATGC TATGCA ATGCAG TGCAGC GCAGCC CAGCCC AGCCCG GCCCGG CCCGGC CCGGCT CGGCTT GGCTTT GCTTTT CTTTTT TTTTTT TTTTTA TTTTAT TTTATG TTATGA TATGAA ATGAAG TGAAGA GAAGAA AAGAAA AGAAAT GAAATT AAATTA AATTAT ATTATG TTATGG TATGGA ATGGAG TGGAGA GGAGAA\t0\n'
