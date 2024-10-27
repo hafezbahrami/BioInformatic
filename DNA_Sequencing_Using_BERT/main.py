@@ -73,7 +73,7 @@ def train():
     if not path.isdir(file_dir + "/DNABERT"):
         raise Exception("DNABERT must be git-cloned locally. Please read the readme.md. After cloning, the function below should be run to make the required changes. DNABERT must then be installed (as editable package).")
     helper.minor_version_changes_in_DNABERT()
-    helper.setting_env_variables_for_DNABERT(kmer_val, load_nodel_from_chk_points=load_nodel_from_chk_points)
+    helper.setting_env_variables_for_DNABERT(kmer_val, window_size, load_nodel_from_chk_points=load_nodel_from_chk_points)
 
     # (3) TRAIN: Running fin-tunning in DNABERT: run the main() function in the DNABERT package
     TOKENIZER_NAME = os.environ.get("TOKENIZER_NAME")
@@ -181,10 +181,9 @@ def train():
     # # making up the test labels. There should be a better way to create this
     # gt_labels_test_length = 1392496
     # genome_label_test = [np.random.binomial(n=1, p=0.5, size=1).item() for _ in range(gt_labels_test_length)]
-    if kmer_val != 6 or window_size != 75:
-        raise Exception("Below code is temporariy and when kmer=6 and window_size=75")
+
     genome_label_test = []
-    for line in k_mer_seq_test_X_and_Y_lab_dict["test_6_labels_75"]:
+    for line in k_mer_seq_test_X_and_Y_lab_dict[f"test_{kmer_val}_labels_{window_size}"]:
         for _ in range(window_size):
             if line[-2].isdigit():
                 genome_label_test.append(int(line[-2])) # This part of the code should be compatible to what we have in "predict_label_from_prob" method

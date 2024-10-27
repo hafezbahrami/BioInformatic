@@ -84,7 +84,7 @@ def _find_largest_numbered_folder(folder_path):
                     largest_folder = folder_name
     return folder_path + largest_folder + "/"
 
-def setting_env_variables_for_DNABERT(kmer_val, load_nodel_from_chk_points=False):
+def setting_env_variables_for_DNABERT(kmer_val, window_size, load_nodel_from_chk_points=False):
     """Setting some enviroment variable"""
     os.environ['KMER'] = str(kmer_val)
     k = os.getenv("KMER")
@@ -97,7 +97,7 @@ def setting_env_variables_for_DNABERT(kmer_val, load_nodel_from_chk_points=False
         if largest_chk_point_folder:
             os.environ['MODEL_PATH'] = largest_chk_point_folder
     
-    os.environ['DATA_PATH'] = current_path + f"ecoli_data/{k}/method1/75/"
+    os.environ['DATA_PATH'] = current_path + f"ecoli_data/{k}/method1/{window_size}/"
     os.environ['OUTPUT_PATH'] = current_path + f"output/{k}/"
     os.environ['PREDICTION_PATH'] = current_path + f"prediction/{k}/"
 
