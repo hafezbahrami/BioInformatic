@@ -30,29 +30,7 @@ def train():
     num_train_epochs = 1                                                               # 10
     lr = 1.0e-6
     min_lr = 1e-8
-    # ---------------------------------------------------------------------------------------------
-    # (0) remove all cach files
-    def delete_all_cash_files_recursively(directory):
-        # Walk through the directory and its subdirectories
-        for foldername, subfolders, filenames in os.walk(directory):
-            #print(f"Searching folder: {foldername}")  # Debug: Shows current folder
-            for filename in filenames:
-                # Check if the file starts with "cash"
-                if filename.startswith("cach"):
-                    file_path = os.path.join(foldername, filename)  # Full path to the file
-                    try:
-                        os.remove(file_path)
-                        print(f"Deleted: {file_path}")  # Debug: Shows deleted file
-                    except Exception as e:
-                        print(f"Failed to delete {file_path}: {e}")  # Debug: Shows errors
 
-            # Recursively call the function on subfolders
-            for subfolder in subfolders:
-                if subfolder != "pretrained_DNA": # exclude this folder since the pretrained model is hold here
-                    subfolder_path = os.path.join(foldername, subfolder)
-                    delete_all_cash_files_recursively(subfolder_path)
-
-            break
 
     if delete_cash_files:
         print(f"\n\nDeleting all cach files from previous runs!")
