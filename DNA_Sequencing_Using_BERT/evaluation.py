@@ -10,7 +10,70 @@ import os
 import shutil
 
 
+def plot_roc(gt_labels, probas):
+    """Show Matthews correlation coefficient (MCC curve"""
+    fpr, tpr, threshold = metrics.roc_curve(gt_labels, probas)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.plot(fpr, tpr)
+    fig.suptitle('ROC')
+    # Set the background color of the figure to white
+    fig.patch.set_facecolor('white')
+    # Set the background color of the axes to white
+    ax.set_facecolor('white')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['left'].set_color('black')
+    ax.set_xlabel('False positive rate')
+    ax.set_ylabel('True positive rate')
+    fig.tight_layout(pad=0.5)
+    fig.savefig("./figures/plots/" + "roc.png")
 
+
+
+def get_loss(path):
+  """Save loss values from the logs and read them from the file"""
+  data = []
+  avg = 0
+  with open(path, 'r') as f:
+    lines = f.readlines()
+    #print(lines)
+    for line in lines:
+      if line[0]=='{':
+        line = line[:-1]
+        #print(line)
+        data.append(eval(line))
+      elif len(line)>5:
+        #print(line)
+        line = line.split(' ')
+        avg = float(line[-1])
+  rates = [x.get('learning_rate') for x in data]
+  losses = [x.get('loss') for x in data]
+  steps = [x.get('step') for x in data]
+  return steps, losses, avg
+
+
+
+def plot_loss(path):
+    """Visualize the model performation bu showing the loss values during the training"""
+    steps, losses, avg = get_loss(path)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.plot(steps, losses, label='training loss')
+    if avg > 0:
+        ax.axhline(y=avg, color='red', label='avg loss')
+        legend = ['training loss', f'avg loss {avg:.4f}']
+    else:
+        legend = ['training loss']    
+    ax.legend(legend)
+    ax.set_xlabel("steps")
+    fig.suptitle(f'Loss')
+    # Set the background color of the figure to white
+    fig.patch.set_facecolor('white')
+    # Set the background color of the axes to white
+    ax.set_facecolor('white')
+    ax.spines['bottom'].set_color('black')
+    ax.spines['left'].set_color('black')
+    fig.tight_layout(pad=0.5)
+    fig.savefig("./figures/plots/" + "loss.png")
+    #fig.plot(steps, rates)
 
 
 def make_image(path):
