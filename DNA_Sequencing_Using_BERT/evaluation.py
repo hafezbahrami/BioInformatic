@@ -9,6 +9,64 @@ from PIL import Image
 import os
 import shutil
 
+def predict_label_from_prob(data, seq_len, threshold=0.5):
+  """Change the predictions from floats in range [0,1] into labels 0 or 1"""
+  labels = []
+  probabs = []
+  for p in data:
+    if p > threshold:
+      for i in range(seq_len):
+        labels.append(1)
+        probabs.append(p)
+    else:
+      for i in range(seq_len):
+        labels.append(0)
+        probabs.append(p)
+  return labels, probabs
+
+
+
+def plot_distribution(prob_data, th):
+    """Visualize the distribution of predicted values. Y-axis=occurance, X-axis=Predicted probability"""
+    vals = [int(v * 1000) for v in prob_data]               # multiply the prob value by 1000, and just get rid of sig-digits
+    counts_prob = Counter(vals)                             # {468:3,  609:5, 549:10, ...}
+    c = np.zeros(1000+1)
+    for key, value in counts_prob.items():
+        c[key] = value                                      # c will be zero every-where, except those places that we got some int(prob*1000)
+
+    fig = plt.figure(figsize=(6, 6))
+    plt.plot(c, label='predictions')
+    plt.yscale('log')
+    fig.suptitle('Distribution of predictions')
+    plt.axvline(x=th * 1000, color='red', label='threshold')
+    plt.legend(['predictions', 'threshold'])
+    locs, labels = plt.xticks()                             # Get the current locations and labels.
+    stp = 1 / (len(locs) - 2)
+    lbls = [x / 1000 for x in locs]                         # Since we multiplied the prob by 1000, to get the real values, we divide by 1000
+
+    plt.xticks(ticks=locs[1:len(locs) - 1], labels=lbls[1:len(lbls) - 1])
+    plt.xlabel(r'$Y_{pred-prob}$')
+    plt.ylabel('Occurance')
+    plt.savefig("./figures/plots/"+"distribution.png")
+
+
+
+def plot_confusion(tp,tn,fp,fn):
+    """Visualize the TP, TN, FP and FN counts"""
+    results = np.array([[tn,fp], [fn,tp]])
+    df_cm = pd.DataFrame(results)
+    strings = np.asarray([['TN', 'FP'], ['FN', 'TP']])
+    labels = (np.asarray(["{0}: {1}".format(string, value)   for string, value in zip(strings.flatten(),  results.flatten())]) ).reshape(2, 2)
+    fig = plt.figure(figsize = (6,6))
+    sn.set(font_scale=2)
+    sn.heatmap(df_cm, annot=labels, fmt="", cmap="rainbow", xticklabels=False, yticklabels=False, cbar=False)
+    fig.suptitle('Confusion matrix')
+    plt.xlabel(r'$Y_{pred}$')
+    plt.ylabel(r'$Y_{label}$')
+    plt.savefig("./figures/plots/" + "confusion.png")
+
+
+
 
 def plot_roc(gt_labels, probas):
     """Show Matthews correlation coefficient (MCC curve"""
